@@ -13,18 +13,22 @@
 :root { --primary:#1a237e; --primary-light:#3949ab; --bg:#f0f2f5; --card:#fff; --text:#212121; --text-light:#757575; --success:#388e3c; --warning:#f57c00; --danger:#d32f2f; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
+/* ===================== LOGIN ===================== */
 .login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); }
-.login-card { background:white; padding:30px; border-radius:20px; width:100%; max-width:350px; box-shadow:0 10px 30px rgba(0,0,0,0.2); text-align:center; }
+.login-card { background:white; padding:30px; border-radius:20px; width:100%; max-width:350px; box-shadow:0 10px 30px rgba(0,0,0,0.2); text-align:center; animation:fadeInUp 0.5s ease-out; }
 .login-card h1 { font-size:3rem; margin-bottom:10px; }
 .login-card h2 { color:var(--primary); margin-bottom:8px; font-size:1.3rem; }
 .login-card .empresa-nombre { color:var(--text-light); font-size:0.9rem; margin-bottom:20px; font-weight:600; }
-.login-input { width:100%; padding:15px; border:2px solid #e0e0e0; border-radius:12px; font-size:1.2rem; text-align:center; margin-bottom:20px; outline:none; text-transform:uppercase; letter-spacing:2px; }
+.login-input { width:100%; padding:15px; border:2px solid #e0e0e0; border-radius:12px; font-size:1.2rem; text-align:center; margin-bottom:20px; outline:none; text-transform:uppercase; letter-spacing:2px; transition:border-color 0.2s, opacity 0.2s; }
 .login-input:focus { border-color:var(--primary); }
-.login-btn { width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; }
-.login-btn:disabled { opacity:0.6; }
+.login-input.cargando { opacity:0.6; pointer-events:none; background:#f5f5f5; }
+.login-btn { width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; transition:transform 0.15s; }
+.login-btn:disabled { opacity:0.9; cursor:wait; }
+.login-btn.cargando { animation:pulseRing 1.8s infinite; }
 .error-msg { color:#c62828; font-size:0.85rem; margin-top:10px; display:none; }
 
-.app-container { display:none; padding-bottom:100px; }
+/* ===================== APP ===================== */
+.app-container { display:none; padding-bottom:100px; animation:fadeIn 0.4s ease; }
 .header { background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:#fff; padding:20px; text-align:center; border-radius:0 0 25px 25px; position:relative; }
 .header h1 { font-size:1.2rem; margin-bottom:4px; }
 .header .employee-name { font-size:1rem; font-weight:600; margin-bottom:4px; }
@@ -90,9 +94,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .empty-state { text-align:center; padding:40px 20px; color:var(--text-light); }
 .empty-state .icon { font-size:3rem; margin-bottom:10px; }
 
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9998; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.show { display:flex !important; }
-.modal { background:white; border-radius:20px; padding:25px; width:100%; max-width:400px; max-height:90vh; overflow-y:auto; z-index:10000; position:relative; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+.modal { background:white; border-radius:20px; padding:25px; width:100%; max-width:400px; max-height:90vh; overflow-y:auto; z-index:9999; position:relative; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
 .modal h3 { margin-bottom:15px; color:var(--primary); }
 .modal label { font-size:0.8rem; color:var(--text-light); font-weight:600; display:block; margin-top:10px; }
 .modal input, .modal select, .modal textarea { width:100%; padding:10px 14px; border:2px solid #e0e0e0; border-radius:10px; font-size:0.95rem; margin-top:6px; outline:none; font-family:inherit; }
@@ -107,40 +111,30 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .toast.success { background:#2e7d32; } .toast.error { background:#c62828; } .toast.warn { background:#e65100; }
 .spinner { display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:#fff; animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
-  /* ============================================ */
-/*  🔧 Animaciones de carga para el login       */
-/* ============================================ */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
-@keyframes spinnerGrow {
-  from { transform: scale(0); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+/* ===================== ANIMACIONES DE CARGA ===================== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes dotBounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
   40% { transform: translateY(-8px); opacity: 1; }
 }
-
 @keyframes pulseRing {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(26, 35, 126, 0.5);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 15px rgba(26, 35, 126, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(26, 35, 126, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0.5); }
+  70% { box-shadow: 0 0 0 15px rgba(26, 35, 126, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
 }
 
-/* Overlay de carga que bloquea la pantalla */
 .loading-overlay {
   display: none;
   position: fixed;
@@ -148,70 +142,40 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
   background: rgba(26, 35, 126, 0.85);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  z-index: 9999;
+  z-index: 99999;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 20px;
   animation: fadeIn 0.3s ease;
 }
-.loading-overlay.show {
-  display: flex;
-}
+.loading-overlay.show { display: flex; }
 .loading-overlay .big-spinner {
-  width: 70px;
-  height: 70px;
+  width: 70px; height: 70px;
   border: 5px solid rgba(255, 255, 255, 0.25);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
 .loading-overlay .loading-text {
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 600;
+  color: #fff; font-size: 1.05rem; font-weight: 600;
   letter-spacing: 0.5px;
   animation: pulseContador 1.5s ease infinite;
+  text-align: center;
+  padding: 0 20px;
 }
-.loading-overlay .loading-sub {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.85rem;
-}
+.loading-overlay .loading-sub { color: rgba(255, 255, 255, 0.75); font-size: 0.85rem; }
 
-/* Puntos suspensivos animados */
-.loading-dots {
-  display: none;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 15px;
-}
-.loading-dots.show {
-  display: flex;
-  animation: fadeIn 0.3s ease;
-}
+.loading-dots { display: none; justify-content: center; gap: 6px; margin-top: 15px; }
+.loading-dots.show { display: flex; animation: fadeIn 0.3s ease; }
 .loading-dots span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 10px; height: 10px; border-radius: 50%;
   background: var(--primary);
   animation: dotBounce 1.4s infinite ease-in-out both;
 }
 .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
 .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 .loading-dots span:nth-child(3) { animation-delay: 0s; }
-
-/* Botón de login en estado "cargando" */
-.login-btn.cargando {
-  animation: pulseRing 1.8s infinite;
-  cursor: wait;
-}
-
-/* Input bloqueado */
-.login-input.cargando {
-  opacity: 0.6;
-  pointer-events: none;
-  background: #f5f5f5;
-}
 </style>
 </head>
 <body>
@@ -222,13 +186,22 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
     <h2>Control de Asistencia</h2>
     <div class="empresa-nombre" id="empresaNombre">Cargando empresa...</div>
     <p style="color:var(--text-light); margin-bottom:20px; font-size:0.9rem;">Ingresa tu número de empleado</p>
-    <input type="text" class="login-input" id="inputEmpleadoId" placeholder="Ej: 2525" autocomplete="off">
+    <input type="text" class="login-input" id="inputEmpleadoId" placeholder="Ej: 2525" autocomplete="off" onkeydown="if(event.key==='Enter') iniciarSesion()">
     <button class="login-btn" id="btnLogin" onclick="iniciarSesion()">
       <span id="btnText">Ingresar</span>
       <span class="spinner" id="btnSpinner" style="display:none;"></span>
     </button>
+    <div class="loading-dots" id="loadingDots">
+      <span></span><span></span><span></span>
+    </div>
     <div class="error-msg" id="errorMsg">Número de empleado no encontrado</div>
   </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="big-spinner"></div>
+  <div class="loading-text" id="loadingText">Validando credenciales...</div>
+  <div class="loading-sub">Un momento por favor</div>
 </div>
 
 <div class="app-container" id="appContainer">
@@ -382,7 +355,8 @@ function showToast(msg, tipo = 'info') {
 //  INIT
 // ================================================================
 function init() {
-  document.getElementById('empresaNombre').textContent = NOMBRE_EMPRESA;
+  const empNombreEl = document.getElementById('empresaNombre');
+  if (empNombreEl) empNombreEl.textContent = NOMBRE_EMPRESA;
 
   const fechaGuardada = localStorage.getItem('contador_fecha');
   const hoyStr = fechaLocalISO();
@@ -480,19 +454,49 @@ function actualizarContadorTiempoReal() {
 }
 
 // ================================================================
-//  LOGIN
+//  LOGIN CON ANIMACIONES
 // ================================================================
 async function iniciarSesion() {
   const id = document.getElementById('inputEmpleadoId').value.trim().toUpperCase();
-  if (!id) return;
+  if (!id) { document.getElementById('inputEmpleadoId').focus(); return; }
+
   const btnText = document.getElementById('btnText');
   const btnSpinner = document.getElementById('btnSpinner');
   const btnLogin = document.getElementById('btnLogin');
   const errorMsg = document.getElementById('errorMsg');
-  btnText.style.display = 'none';
+  const input = document.getElementById('inputEmpleadoId');
+  const overlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+  const loadingDots = document.getElementById('loadingDots');
+
+  btnText.textContent = 'Validando...';
   btnSpinner.style.display = 'inline-block';
   btnLogin.disabled = true;
+  btnLogin.classList.add('cargando');
+  input.classList.add('cargando');
+  input.disabled = true;
   errorMsg.style.display = 'none';
+  loadingDots.classList.add('show');
+  overlay.classList.add('show');
+
+  const mensajes = [
+    'Validando credenciales...',
+    'Verificando número de empleado...',
+    'Cargando tu información...',
+    'Casi listo...'
+  ];
+  let msgIdx = 0;
+  loadingText.textContent = mensajes[0];
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % mensajes.length;
+    loadingText.textContent = mensajes[msgIdx];
+  }, 2000);
+
+  const timeoutId = setTimeout(() => {
+    loadingText.textContent = 'El servidor tarda más de lo esperado...';
+    const sub = document.querySelector('.loading-overlay .loading-sub');
+    if (sub) sub.textContent = 'Verifica tu conexión a internet';
+  }, 20000);
 
   try {
     const response = await fetch(API_URL, {
@@ -512,8 +516,13 @@ async function iniciarSesion() {
     }
 
     if (data.status === 'ok') {
+      loadingText.textContent = '¡Bienvenido ' + (data.empleado?.nombre?.split(' ')[0] || '') + '!';
+      const sub = document.querySelector('.loading-overlay .loading-sub');
+      if (sub) sub.textContent = 'Preparando tu panel...';
+
       empleado = data.empleado;
       localStorage.setItem('empleado_actual', JSON.stringify(empleado));
+
       const fechaGuardada = localStorage.getItem('contador_fecha');
       if (fechaGuardada !== fechaLocalISO()) {
         estadoActual = 'fuera';
@@ -523,21 +532,36 @@ async function iniciarSesion() {
         localStorage.removeItem('hora_entrada_actual');
         localStorage.removeItem('minutos_acumulados_hoy');
       }
+
+      await new Promise(r => setTimeout(r, 700));
       mostrarApp();
       reconciliarEstadoConServidor();
     } else {
       errorMsg.textContent = data.mensaje || 'Empleado no encontrado';
       errorMsg.style.display = 'block';
-      document.getElementById('inputEmpleadoId').value = '';
+      input.value = '';
+      input.style.animation = 'none';
+      setTimeout(() => { input.style.animation = 'shake 0.4s'; }, 10);
     }
   } catch (error) {
     console.error('Error login:', error);
     errorMsg.textContent = 'Error de conexión. Verifica tu internet.';
     errorMsg.style.display = 'block';
   } finally {
-    btnText.style.display = 'inline';
+    clearInterval(msgInterval);
+    clearTimeout(timeoutId);
+
+    btnText.textContent = 'Ingresar';
     btnSpinner.style.display = 'none';
     btnLogin.disabled = false;
+    btnLogin.classList.remove('cargando');
+    input.classList.remove('cargando');
+    input.disabled = false;
+    loadingDots.classList.remove('show');
+    overlay.classList.remove('show');
+
+    const sub = document.querySelector('.loading-overlay .loading-sub');
+    if (sub) sub.textContent = 'Un momento por favor';
   }
 }
 
@@ -631,7 +655,7 @@ function obtenerUbicacion() {
 }
 
 // ================================================================
-//  REGISTRAR ENTRADA / SALIDA
+//  REGISTRAR (con bloqueo de doble entrada)
 // ================================================================
 async function registrar(tipo) {
   if (!empleado || !empleado.id) {
@@ -653,14 +677,12 @@ async function registrar(tipo) {
     const ultimo = regsHoy[regsHoy.length - 1];
     const estadoReal = ultimo && ultimo.tipo === 'entrada' ? 'dentro' : 'fuera';
 
-    // Sincronizar estado local con el real
     if (estadoReal !== estadoActual) {
       estadoActual = estadoReal;
       localStorage.setItem('estado_actual', estadoActual);
       actualizarUI();
     }
 
-    // Bloquear registros duplicados
     if (tipo === 'entrada' && estadoReal === 'dentro') {
       showToast('⚠️ Ya tienes una entrada registrada. Registra tu SALIDA primero.', 'warn');
       return;
@@ -671,15 +693,8 @@ async function registrar(tipo) {
     }
   } catch (e) {
     console.warn('No se pudo validar el estado previo:', e);
-    // Si falla la validación, dejamos que continúe (mejor experiencia que bloquear)
   }
 
-  const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
-  const txtOrig = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Registrando...';
-  }
   const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
   const txtOrig = btn ? btn.innerHTML : '';
   if (btn) {
@@ -733,12 +748,15 @@ async function registrar(tipo) {
 
     if (result.status !== 'ok') {
       showToast('❌ ' + (result.mensaje || 'No se pudo registrar'), 'error');
+      // Si el backend rechaza (ej: entrada duplicada), sincronizamos estado
+      if (result.mensaje && (result.mensaje.includes('entrada registrada') || result.mensaje.includes('entrada activa'))) {
+        reconciliarEstadoConServidor();
+      }
       return;
     }
 
     console.log('✅ Registro guardado en backend:', result);
 
-    // ===== Actualizar UI (blindado) =====
     try {
       const dentro = result.dentro_sucursal;
       const fuera = dentro === false || dentro === 'NO' || (typeof dentro === 'string' && dentro.startsWith('NO'));
@@ -774,7 +792,6 @@ async function registrar(tipo) {
       showToast('⚠️ Registro guardado. Recarga la página si ves datos desactualizados.', 'warn');
     }
 
-    // Refrescar estadísticas (si falla, no afecta el mensaje principal)
     try {
       await cargarMisEstadisticas();
     } catch (statsError) {
@@ -793,7 +810,7 @@ async function registrar(tipo) {
 }
 
 // ================================================================
-//  ACTUALIZAR UI (botones y badge de estado)
+//  ACTUALIZAR UI
 // ================================================================
 function actualizarUI() {
   const badge = document.getElementById('statusBadge');
@@ -801,19 +818,16 @@ function actualizarUI() {
   const btnE = document.getElementById('btnEntrada');
   const btnS = document.getElementById('btnSalida');
 
-  if (badge) {
-    if (estadoActual === 'dentro') {
-      badge.className = 'status-badge dentro';
-    } else {
-      badge.className = 'status-badge fuera';
-    }
-  }
-  if (statusText) {
-    statusText.textContent = estadoActual === 'dentro' ? 'Dentro del trabajo' : 'Fuera del trabajo';
-  }
-  if (btnE) btnE.disabled = (estadoActual === 'dentro');
-  if (btnS) btnS.disabled = (estadoActual !== 'dentro');
-  if (estadoActual !== 'dentro') {
+  if (estadoActual === 'dentro') {
+    if (badge) badge.className = 'status-badge dentro';
+    if (statusText) statusText.textContent = 'Dentro del trabajo';
+    if (btnE) btnE.disabled = true;
+    if (btnS) btnS.disabled = false;
+  } else {
+    if (badge) badge.className = 'status-badge fuera';
+    if (statusText) statusText.textContent = 'Fuera del trabajo';
+    if (btnE) btnE.disabled = false;
+    if (btnS) btnS.disabled = true;
     const elTodayHours = document.getElementById('todayHours');
     if (elTodayHours) elTodayHours.classList.remove('contando');
   }
@@ -922,7 +936,6 @@ async function cargarMisEstadisticas() {
       if (diff > 0 && diff < 16*60) minutosHoyConteo += diff;
     }
 
-    // Excepciones
     let permisosAprobados = [];
     let diasVacaciones = 0;
     try {

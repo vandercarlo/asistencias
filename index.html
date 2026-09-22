@@ -248,6 +248,9 @@ let contadorInterval = null;
 let horaEntradaActual = null;
 let minutosAcumuladosHoy = 0;
 
+// ================================================================
+//  UTILIDADES
+// ================================================================
 function fechaLocalISO(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -255,6 +258,24 @@ function fechaLocalISO(d = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
+function timeToMin(h) {
+  if (!h) return 0;
+  const p = String(h).split(':');
+  return parseInt(p[0]) * 60 + parseInt(p[1] || 0);
+}
+
+function showToast(msg, tipo = 'info') {
+  const t = document.getElementById('toast');
+  if (!t) { console.log('[TOAST ' + tipo + ']', msg); return; }
+  t.textContent = msg;
+  t.className = 'toast show ' + (tipo !== 'info' ? tipo : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+// ================================================================
+//  INIT
+// ================================================================
 function init() {
   document.getElementById('empresaNombre').textContent = NOMBRE_EMPRESA;
 
@@ -291,11 +312,154 @@ function verificarCambioDia() {
     localStorage.setItem('estado_actual', 'fuera');
     localStorage.removeItem('minutos_acumulados_hoy');
     actualizarUI();
-    document.getElementById('todayHours').textContent = '0h 0m';
+    const elToday = document.getElementById('todayHours');
+    if (elToday) elToday.textContent = '0h 0m';
     cargarMisEstadisticas();
   }
 }
 
+function actualizarReloj() {
+  const a = new Date();
+  const elClock = document.getElementById('clockDisplay');
+  const elDate = document.getElementById('dateDisplay');
+  if (elClock) elClock.textContent = String(a.getHours()).padStart(2,'0') + ':' + String(a.getMinutes()).padStart(2,'0') + ':' + String(a.getSeconds()).padStart(2,'0');
+  if (elDate) elDate.textContent = a.toLocaleDateString('es-MX', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+
+// ================================================================
+//  CONTADOR
+// ================================================================
+function iniciarContador() {
+  horaEntradaActual = Date.now();
+  iniciarContadorDesde(horaEntradaActual);
+}
+
+function iniciarContadorDesde(ts) {
+  horaEntradaActual = ts;
+  localStorage.setItem('hora_entrada_actual', ts.toString());
+  localStorage.setItem('contador_fecha', fechaLocalISO());
+  if (contadorInterval) clearInterval(contadorInterval);
+  contadorInterval = setInterval(actualizarContadorTiempoReal, 1000);
+  actualizarContadorTiempoReal();
+}
+
+function reanudarContador() {
+  const guardada = localStorage.getItem('hora_entrada_actual');
+  const fechaGuardada = localStorage.getItem('contador_fecha');
+  if (guardada && fechaGuardada === fechaLocalISO()) {
+    iniciarContadorDesde(parseInt(guardada));
+  } else {
+    estadoActual = 'fuera';
+    localStorage.setItem('estado_actual', 'fuera');
+  }
+}
+
+function detenerContador() {
+  if (contadorInterval) { clearInterval(contadorInterval); contadorInterval = null; }
+  horaEntradaActual = null;
+  localStorage.removeItem('hora_entrada_actual');
+}
+
+function actualizarContadorTiempoReal() {
+  if (!horaEntradaActual) return;
+  const minutosTranscurridos = Math.floor((Date.now() - horaEntradaActual) / 60000);
+  const totalMinutos = minutosAcumuladosHoy + minutosTranscurridos;
+  const texto = `${Math.floor(totalMinutos / 60)}h ${totalMinutos % 60}m`;
+  const todayHoursEl = document.getElementById('todayHours');
+  if (todayHoursEl) {
+    todayHoursEl.textContent = texto;
+    todayHoursEl.classList.add('contando');
+  }
+  const hoyHorasEl = document.getElementById('hoyHoras');
+  if (hoyHorasEl) hoyHorasEl.textContent = `Horas hoy: ${texto}`;
+}
+
+// ================================================================
+//  LOGIN
+// ================================================================
+async function iniciarSesion() {
+  const id = document.getElementById('inputEmpleadoId').value.trim().toUpperCase();
+  if (!id) return;
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+  const btnLogin = document.getElementById('btnLogin');
+  const errorMsg = document.getElementById('errorMsg');
+  btnText.style.display = 'none';
+  btnSpinner.style.display = 'inline-block';
+  btnLogin.disabled = true;
+  errorMsg.style.display = 'none';
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'login', id, token: TOKEN_EMPRESA }),
+      redirect: 'follow'
+    });
+    const texto = await response.text();
+    let data;
+    try { data = JSON.parse(texto); }
+    catch(e) {
+      console.error('Respuesta no-JSON:', texto);
+      errorMsg.textContent = 'Error del servidor. Contacta a RH.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    if (data.status === 'ok') {
+      empleado = data.empleado;
+      localStorage.setItem('empleado_actual', JSON.stringify(empleado));
+      const fechaGuardada = localStorage.getItem('contador_fecha');
+      if (fechaGuardada !== fechaLocalISO()) {
+        estadoActual = 'fuera';
+        horaEntradaActual = null;
+        minutosAcumuladosHoy = 0;
+        localStorage.setItem('estado_actual', 'fuera');
+        localStorage.removeItem('hora_entrada_actual');
+        localStorage.removeItem('minutos_acumulados_hoy');
+      }
+      mostrarApp();
+      reconciliarEstadoConServidor();
+    } else {
+      errorMsg.textContent = data.mensaje || 'Empleado no encontrado';
+      errorMsg.style.display = 'block';
+      document.getElementById('inputEmpleadoId').value = '';
+    }
+  } catch (error) {
+    console.error('Error login:', error);
+    errorMsg.textContent = 'Error de conexión. Verifica tu internet.';
+    errorMsg.style.display = 'block';
+  } finally {
+    btnText.style.display = 'inline';
+    btnSpinner.style.display = 'none';
+    btnLogin.disabled = false;
+  }
+}
+
+function mostrarApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('employeeNameDisplay').textContent = empleado.nombre;
+  document.getElementById('infoLine').textContent = `${empleado.sucursal_nombre} • ${empleado.turno_nombre} • ${empleado.departamento}`;
+  if (estadoActual === 'dentro') reanudarContador();
+  obtenerUbicacion();
+  actualizarUI();
+  cargarMisEstadisticas();
+  cargarMisSolicitudes();
+}
+
+function cerrarSesion() {
+  if (confirm('¿Cerrar sesión?')) {
+    detenerContador();
+    ['empleado_actual','estado_actual','hora_entrada_actual','minutos_acumulados_hoy','contador_fecha']
+      .forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
+// ================================================================
+//  RECONCILIAR ESTADO CON SERVIDOR
+// ================================================================
 async function reconciliarEstadoConServidor() {
   try {
     const hoy = fechaLocalISO();
@@ -327,129 +491,12 @@ async function reconciliarEstadoConServidor() {
   } catch(e) { console.warn('No se pudo reconciliar estado:', e); }
 }
 
-function actualizarReloj() {
-  const a = new Date();
-  document.getElementById('clockDisplay').textContent = String(a.getHours()).padStart(2,'0') + ':' + String(a.getMinutes()).padStart(2,'0') + ':' + String(a.getSeconds()).padStart(2,'0');
-  document.getElementById('dateDisplay').textContent = a.toLocaleDateString('es-MX', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-}
-
-function iniciarContador() {
-  horaEntradaActual = Date.now();
-  iniciarContadorDesde(horaEntradaActual);
-}
-function iniciarContadorDesde(ts) {
-  horaEntradaActual = ts;
-  localStorage.setItem('hora_entrada_actual', ts.toString());
-  localStorage.setItem('contador_fecha', fechaLocalISO());
-  if (contadorInterval) clearInterval(contadorInterval);
-  contadorInterval = setInterval(actualizarContadorTiempoReal, 1000);
-  actualizarContadorTiempoReal();
-}
-function reanudarContador() {
-  const guardada = localStorage.getItem('hora_entrada_actual');
-  const fechaGuardada = localStorage.getItem('contador_fecha');
-  if (guardada && fechaGuardada === fechaLocalISO()) {
-    iniciarContadorDesde(parseInt(guardada));
-  } else {
-    estadoActual = 'fuera';
-    localStorage.setItem('estado_actual', 'fuera');
-  }
-}
-function detenerContador() {
-  if (contadorInterval) { clearInterval(contadorInterval); contadorInterval = null; }
-  horaEntradaActual = null;
-  localStorage.removeItem('hora_entrada_actual');
-}
-function actualizarContadorTiempoReal() {
-  if (!horaEntradaActual) return;
-  const minutosTranscurridos = Math.floor((Date.now() - horaEntradaActual) / 60000);
-  const totalMinutos = minutosAcumuladosHoy + minutosTranscurridos;
-  const texto = `${Math.floor(totalMinutos / 60)}h ${totalMinutos % 60}m`;
-  const todayHoursEl = document.getElementById('todayHours');
-  todayHoursEl.textContent = texto;
-  todayHoursEl.classList.add('contando');
-  const hoyHorasEl = document.getElementById('hoyHoras');
-  if (hoyHorasEl) hoyHorasEl.textContent = `Horas hoy: ${texto}`;
-}
-
-async function iniciarSesion() {
-  const id = document.getElementById('inputEmpleadoId').value.trim().toUpperCase();
-  if (!id) return;
-  document.getElementById('btnText').style.display = 'none';
-  document.getElementById('btnSpinner').style.display = 'inline-block';
-  document.getElementById('btnLogin').disabled = true;
-  document.getElementById('errorMsg').style.display = 'none';
-
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ accion: 'login', id, token: TOKEN_EMPRESA }),
-      redirect: 'follow'
-    });
-    const texto = await response.text();
-    let data;
-    try { data = JSON.parse(texto); }
-    catch(e) {
-      console.error('Respuesta no-JSON:', texto);
-      document.getElementById('errorMsg').textContent = 'Error del servidor. Contacta a RH.';
-      document.getElementById('errorMsg').style.display = 'block';
-      return;
-    }
-
-    if (data.status === 'ok') {
-      empleado = data.empleado;
-      localStorage.setItem('empleado_actual', JSON.stringify(empleado));
-      const fechaGuardada = localStorage.getItem('contador_fecha');
-      if (fechaGuardada !== fechaLocalISO()) {
-        estadoActual = 'fuera';
-        horaEntradaActual = null;
-        minutosAcumuladosHoy = 0;
-        localStorage.setItem('estado_actual', 'fuera');
-        localStorage.removeItem('hora_entrada_actual');
-        localStorage.removeItem('minutos_acumulados_hoy');
-      }
-      mostrarApp();
-      reconciliarEstadoConServidor();
-    } else {
-      document.getElementById('errorMsg').textContent = data.mensaje || 'Empleado no encontrado';
-      document.getElementById('errorMsg').style.display = 'block';
-      document.getElementById('inputEmpleadoId').value = '';
-    }
-  } catch (error) {
-    console.error('Error login:', error);
-    document.getElementById('errorMsg').textContent = 'Error de conexión. Verifica tu internet.';
-    document.getElementById('errorMsg').style.display = 'block';
-  } finally {
-    document.getElementById('btnText').style.display = 'inline';
-    document.getElementById('btnSpinner').style.display = 'none';
-    document.getElementById('btnLogin').disabled = false;
-  }
-}
-
-function mostrarApp() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appContainer').style.display = 'block';
-  document.getElementById('employeeNameDisplay').textContent = empleado.nombre;
-  document.getElementById('infoLine').textContent = `${empleado.sucursal_nombre} • ${empleado.turno_nombre} • ${empleado.departamento}`;
-  if (estadoActual === 'dentro') reanudarContador();
-  obtenerUbicacion();
-  actualizarUI();
-  cargarMisEstadisticas();
-  cargarMisSolicitudes();
-}
-
-function cerrarSesion() {
-  if (confirm('¿Cerrar sesión?')) {
-    detenerContador();
-    ['empleado_actual','estado_actual','hora_entrada_actual','minutos_acumulados_hoy','contador_fecha']
-      .forEach(k => localStorage.removeItem(k));
-    location.reload();
-  }
-}
-
+// ================================================================
+//  UBICACIÓN
+// ================================================================
 function obtenerUbicacion() {
   const el = document.getElementById('locationInfo');
+  if (!el) return;
   if (!navigator.geolocation) {
     el.innerHTML = '📍 Ubicación no disponible en este dispositivo';
     el.className = 'location-info far';
@@ -478,6 +525,9 @@ function obtenerUbicacion() {
   );
 }
 
+// ================================================================
+//  REGISTRAR ENTRADA / SALIDA
+// ================================================================
 async function registrar(tipo) {
   if (!empleado || !empleado.id) {
     showToast('❌ Sesión inválida. Vuelve a iniciar sesión.', 'error');
@@ -546,7 +596,7 @@ async function registrar(tipo) {
 
     console.log('✅ Registro guardado en backend:', result);
 
-    // ============ ACTUALIZAR UI (blindado) ============
+    // ===== Actualizar UI (blindado) =====
     try {
       const dentro = result.dentro_sucursal;
       const fuera = dentro === false || dentro === 'NO' || (typeof dentro === 'string' && dentro.startsWith('NO'));
@@ -578,12 +628,11 @@ async function registrar(tipo) {
       showToast(tipo === 'entrada' ? '✅ Entrada registrada' : '🔴 Salida registrada', 'success');
       actualizarUI();
     } catch (uiError) {
-      // 🔧 Si falla la UI, NO mostramos "error de conexión" porque el registro YA se guardó
       console.error('⚠️ Error al actualizar UI (pero el registro SÍ se guardó):', uiError);
       showToast('⚠️ Registro guardado. Recarga la página si ves datos desactualizados.', 'warn');
     }
 
-    // Refrescar estadísticas aparte (si falla, no afecta el mensaje principal)
+    // Refrescar estadísticas (si falla, no afecta el mensaje principal)
     try {
       await cargarMisEstadisticas();
     } catch (statsError) {
@@ -600,6 +649,88 @@ async function registrar(tipo) {
     }
   }
 }
+
+// ================================================================
+//  ACTUALIZAR UI (botones y badge de estado)
+// ================================================================
+function actualizarUI() {
+  const badge = document.getElementById('statusBadge');
+  const statusText = document.getElementById('statusText');
+  const btnE = document.getElementById('btnEntrada');
+  const btnS = document.getElementById('btnSalida');
+
+  if (badge) {
+    if (estadoActual === 'dentro') {
+      badge.className = 'status-badge dentro';
+    } else {
+      badge.className = 'status-badge fuera';
+    }
+  }
+  if (statusText) {
+    statusText.textContent = estadoActual === 'dentro' ? 'Dentro del trabajo' : 'Fuera del trabajo';
+  }
+  if (btnE) btnE.disabled = (estadoActual === 'dentro');
+  if (btnS) btnS.disabled = (estadoActual !== 'dentro');
+  if (estadoActual !== 'dentro') {
+    const elTodayHours = document.getElementById('todayHours');
+    if (elTodayHours) elTodayHours.classList.remove('contando');
+  }
+}
+
+// ================================================================
+//  CAMBIO DE PESTAÑA
+// ================================================================
+function cambiarTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const content = document.getElementById('tab-' + tab);
+  if (content) content.classList.add('active');
+  if (tab === 'estadisticas') cargarMisEstadisticas();
+  if (tab === 'solicitudes') cargarMisSolicitudes();
+}
+
+// ================================================================
+//  CÁLCULO DE HORAS
+// ================================================================
+function calcularHorasPorDia(registros) {
+  const porDia = {};
+  registros.forEach(r => {
+    if (!porDia[r.fecha]) porDia[r.fecha] = [];
+    porDia[r.fecha].push(r);
+  });
+
+  let totalMin = 0;
+  const detalleDias = {};
+
+  Object.keys(porDia).forEach(fecha => {
+    const regs = porDia[fecha].sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    let minutosDia = 0;
+    let entradaPendiente = null;
+
+    regs.forEach(r => {
+      if (r.tipo === 'entrada') {
+        entradaPendiente = r.hora;
+      } else if (r.tipo === 'salida' && entradaPendiente) {
+        const en = timeToMin(entradaPendiente);
+        const sa = timeToMin(r.hora);
+        let diff = sa - en;
+        if (diff < 0) diff += 1440;
+        if (diff > 0 && diff < 16 * 60) minutosDia += diff;
+        entradaPendiente = null;
+      }
+    });
+
+    detalleDias[fecha] = minutosDia;
+    totalMin += minutosDia;
+  });
+
+  return { totalMin, detalleDias };
+}
+
+// ================================================================
+//  ESTADÍSTICAS
+// ================================================================
 async function cargarMisEstadisticas() {
   if (!empleado) return;
   const hoy = new Date();
@@ -607,6 +738,11 @@ async function cargarMisEstadisticas() {
   const desde = fechaLocalISO(inicioMes);
   const hasta = fechaLocalISO(hoy);
   const hoyStr = fechaLocalISO(hoy);
+
+  const setTxt = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
 
   try {
     const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${desde}&hasta=${hasta}&token=${TOKEN_EMPRESA}`);
@@ -644,39 +780,42 @@ async function cargarMisEstadisticas() {
       if (diff > 0 && diff < 16*60) minutosHoyConteo += diff;
     }
 
-    const excRes = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&token=${TOKEN_EMPRESA}`);
-    const excData = await excRes.json();
-    const excepciones = excData.excepciones || [];
-    const permisosAprobados = excepciones.filter(e => e.estado === 'APROBADO' && ['PERMISO','RETARDO','FALTA_JUST'].includes(e.tipo));
-    const vacaciones = excepciones.filter(e => e.tipo === 'VACACIONES' && e.estado === 'APROBADO');
-
+    // Excepciones
+    let permisosAprobados = [];
     let diasVacaciones = 0;
-    vacaciones.forEach(v => {
-      if (v.fecha_inicio && v.fecha_fin) {
-        const ini = new Date(v.fecha_inicio + 'T00:00:00');
-        const fin = new Date(v.fecha_fin + 'T00:00:00');
-        diasVacaciones += Math.round((fin - ini) / 86400000) + 1;
-      } else if (v.fecha_inicio) {
-        diasVacaciones += 1;
-      }
-    });
+    try {
+      const excRes = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&token=${TOKEN_EMPRESA}`);
+      const excData = await excRes.json();
+      const excepciones = excData.excepciones || [];
+      permisosAprobados = excepciones.filter(e => e.estado === 'APROBADO' && ['PERMISO','RETARDO','FALTA_JUST'].includes(e.tipo));
+      const vacaciones = excepciones.filter(e => e.tipo === 'VACACIONES' && e.estado === 'APROBADO');
+      vacaciones.forEach(v => {
+        if (v.fecha_inicio && v.fecha_fin) {
+          const ini = new Date(v.fecha_inicio + 'T00:00:00');
+          const fin = new Date(v.fecha_fin + 'T00:00:00');
+          diasVacaciones += Math.round((fin - ini) / 86400000) + 1;
+        } else if (v.fecha_inicio) {
+          diasVacaciones += 1;
+        }
+      });
+    } catch(e) { console.warn('No se pudieron cargar excepciones:', e); }
 
-    document.getElementById('statHoras').textContent = `${totalHoras}h ${minsRestantes}m`;
-    document.getElementById('statDias').textContent = diasTrabajados;
-    document.getElementById('statRetardos').textContent = retardos.length;
-    document.getElementById('statFuera').textContent = fueraUbicacion.length;
-    document.getElementById('statPermisos').textContent = permisosAprobados.length;
-    document.getElementById('statVacaciones').textContent = diasVacaciones;
+    setTxt('statHoras', `${totalHoras}h ${minsRestantes}m`);
+    setTxt('statDias', diasTrabajados);
+    setTxt('statRetardos', retardos.length);
+    setTxt('statFuera', fueraUbicacion.length);
+    setTxt('statPermisos', permisosAprobados.length);
+    setTxt('statVacaciones', diasVacaciones);
 
     if (estadoActual !== 'dentro') {
-      document.getElementById('todayHours').textContent = `${Math.floor(minutosHoyConteo/60)}h ${minutosHoyConteo%60}m`;
+      setTxt('todayHours', `${Math.floor(minutosHoyConteo/60)}h ${minutosHoyConteo%60}m`);
     }
 
     const ultimaEntrada = regsHoy.filter(r => r.tipo === 'entrada').pop();
     const ultimaSalida = regsHoy.filter(r => r.tipo === 'salida').pop();
-    document.getElementById('hoyEntrada').textContent = `Entrada: ${ultimaEntrada ? ultimaEntrada.hora : 'Sin registrar'}`;
-    document.getElementById('hoySalida').textContent = `Salida: ${ultimaSalida ? ultimaSalida.hora : 'Sin registrar'}`;
-    document.getElementById('hoyHoras').textContent = `Horas hoy: ${Math.floor(minutosHoyConteo/60)}h ${minutosHoyConteo%60}m`;
+    setTxt('hoyEntrada', `Entrada: ${ultimaEntrada ? ultimaEntrada.hora : 'Sin registrar'}`);
+    setTxt('hoySalida', `Salida: ${ultimaSalida ? ultimaSalida.hora : 'Sin registrar'}`);
+    setTxt('hoyHoras', `Horas hoy: ${Math.floor(minutosHoyConteo/60)}h ${minutosHoyConteo%60}m`);
 
     let diasLaborables = 0;
     const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
@@ -687,24 +826,24 @@ async function cargarMisEstadisticas() {
       if (dow !== 0 && dow !== 6) diasLaborables++;
     }
     const cumplimiento = diasLaborables > 0 ? Math.round((diasTrabajados / diasLaborables) * 100) : 0;
-    document.getElementById('statCumplimiento').textContent = `${cumplimiento}% - ${diasTrabajados} de ${diasLaborables} días`;
+    setTxt('statCumplimiento', `${cumplimiento}% - ${diasTrabajados} de ${diasLaborables} días`);
+
     const bar = document.getElementById('progressBar');
-    bar.style.width = `${Math.min(cumplimiento, 100)}%`;
-    if (cumplimiento < 50) bar.style.background = 'linear-gradient(90deg, #d32f2f, #ef5350)';
-    else if (cumplimiento < 80) bar.style.background = 'linear-gradient(90deg, #f57c00, #ffa726)';
-    else bar.style.background = 'linear-gradient(90deg, #388e3c, #66bb6a)';
+    if (bar) {
+      bar.style.width = `${Math.min(cumplimiento, 100)}%`;
+      if (cumplimiento < 50) bar.style.background = 'linear-gradient(90deg, #d32f2f, #ef5350)';
+      else if (cumplimiento < 80) bar.style.background = 'linear-gradient(90deg, #f57c00, #ffa726)';
+      else bar.style.background = 'linear-gradient(90deg, #388e3c, #66bb6a)';
+    }
   } catch (error) {
-    console.error('Error al cargar estadísticas:', error);
+    console.error('❌ Error al cargar estadísticas:', error);
     showToast('⚠️ No se pudieron cargar tus estadísticas', 'warn');
   }
 }
 
-function timeToMin(h) {
-  if (!h) return 0;
-  const p = h.toString().split(':');
-  return parseInt(p[0]) * 60 + parseInt(p[1] || 0);
-}
-
+// ================================================================
+//  SOLICITUDES
+// ================================================================
 function toggleHorario() {
   const tipo = document.getElementById('inputTipoSolicitud').value;
   document.getElementById('horarioPermiso').style.display = (tipo === 'PERMISO') ? 'block' : 'none';
@@ -796,6 +935,7 @@ async function cargarMisSolicitudes() {
 
 function renderMisSolicitudes() {
   const container = document.getElementById('listaSolicitudes');
+  if (!container) return;
   if (!misSolicitudes || misSolicitudes.length === 0) {
     container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>Sin solicitudes</p><p style="font-size:0.8rem; margin-top:5px;">Presiona "Nueva solicitud" para crear una</p></div>';
     return;
@@ -818,14 +958,9 @@ function renderMisSolicitudes() {
   }).join('');
 }
 
-function showToast(msg, tipo = 'info') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + (tipo !== 'info' ? tipo : '');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
-}
-
+// ================================================================
+//  INIT
+// ================================================================
 init();
 </script>
 </body>

@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a237e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
 <title>Control de Asistencia</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -246,7 +248,6 @@ let contadorInterval = null;
 let horaEntradaActual = null;
 let minutosAcumuladosHoy = 0;
 
-// 🔧 Fecha local YYYY-MM-DD (evita bug UTC)
 function fechaLocalISO(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -381,10 +382,21 @@ async function iniciarSesion() {
 
   try {
     const response = await fetch(API_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ accion: 'login', id, token: TOKEN_EMPRESA })
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'login', id, token: TOKEN_EMPRESA }),
+      redirect: 'follow'
     });
-    const data = await response.json();
+    const texto = await response.text();
+    let data;
+    try { data = JSON.parse(texto); }
+    catch(e) {
+      console.error('Respuesta no-JSON:', texto);
+      document.getElementById('errorMsg').textContent = 'Error del servidor. Contacta a RH.';
+      document.getElementById('errorMsg').style.display = 'block';
+      return;
+    }
+
     if (data.status === 'ok') {
       empleado = data.empleado;
       localStorage.setItem('empleado_actual', JSON.stringify(empleado));
@@ -405,6 +417,7 @@ async function iniciarSesion() {
       document.getElementById('inputEmpleadoId').value = '';
     }
   } catch (error) {
+    console.error('Error login:', error);
     document.getElementById('errorMsg').textContent = 'Error de conexión. Verifica tu internet.';
     document.getElementById('errorMsg').style.display = 'block';
   } finally {
@@ -466,6 +479,10 @@ function obtenerUbicacion() {
 }
 
 async function registrar(tipo) {
+  if (!empleado || !empleado.id) {
+    showToast('❌ Sesión inválida. Vuelve a iniciar sesión.', 'error');
+    return;
+  }
   if (!ubicacionActual) {
     showToast('⚠️ Espera a que se obtenga la ubicación GPS', 'warn');
     obtenerUbicacion();
@@ -480,14 +497,14 @@ async function registrar(tipo) {
   const registro = {
     token: TOKEN_EMPRESA,
     accion: 'registrar',
-    empleado_id: empleado.id,
-    numero_empleado: empleado.id,
-    nombre: empleado.nombre,
-    departamento: empleado.departamento,
-    sucursal_id: empleado.sucursal_id,
-    sucursal_nombre: empleado.sucursal_nombre,
-    turno_id: empleado.turno_id,
-    turno_nombre: empleado.turno_nombre,
+    empleado_id: String(empleado.id),
+    numero_empleado: String(empleado.id),
+    nombre: empleado.nombre || '',
+    departamento: empleado.departamento || '',
+    sucursal_id: empleado.sucursal_id || '',
+    sucursal_nombre: empleado.sucursal_nombre || '',
+    turno_id: empleado.turno_id || '',
+    turno_nombre: empleado.turno_nombre || '',
     tipo: tipo,
     fecha: fechaLocalISO(ahora),
     hora: String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0') + ':' + String(ahora.getSeconds()).padStart(2,'0'),
@@ -498,13 +515,27 @@ async function registrar(tipo) {
     dispositivo: navigator.userAgent
   };
 
+  console.log('📤 Enviando registro:', registro);
+
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(registro)
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(registro),
+      redirect: 'follow'
     });
-    const result = await res.json();
+
+    console.log('📥 Status:', res.status);
+    const textoRespuesta = await res.text();
+    console.log('📥 Respuesta cruda:', textoRespuesta);
+
+    let result;
+    try { result = JSON.parse(textoRespuesta); }
+    catch (parseErr) {
+      console.error('❌ Respuesta no-JSON:', textoRespuesta.substring(0, 500));
+      showToast('❌ El servidor no devolvió JSON. Revisa el deployment.', 'error');
+      return;
+    }
 
     if (result.status !== 'ok') {
       showToast('❌ ' + (result.mensaje || 'No se pudo registrar'), 'error');
@@ -538,7 +569,8 @@ async function registrar(tipo) {
     actualizarUI();
     cargarMisEstadisticas();
   } catch (error) {
-    showToast('❌ Error de conexión al registrar. Intenta de nuevo.', 'error');
+    console.error('❌ Error completo:', error);
+    showToast('❌ Error de conexión: ' + (error.message || 'desconocido'), 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = txtOrig;
@@ -744,8 +776,8 @@ async function enviarSolicitud() {
     token: TOKEN_EMPRESA,
     accion: 'solicitar_justificacion',
     tipo,
-    empleado_id: empleado.id,
-    numero_empleado: empleado.id,
+    empleado_id: String(empleado.id),
+    numero_empleado: String(empleado.id),
     empleado_nombre: empleado.nombre,
     sucursal_id: empleado.sucursal_id,
     turno_id: empleado.turno_id,
@@ -759,10 +791,16 @@ async function enviarSolicitud() {
   btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
   try {
     const response = await fetch(API_URL, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(data)
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data),
+      redirect: 'follow'
     });
-    const result = await response.json();
+    const texto = await response.text();
+    let result;
+    try { result = JSON.parse(texto); }
+    catch(e) { showToast('❌ Respuesta inválida del servidor', 'error'); return; }
+
     if (result.status === 'ok') {
       cerrarModalSolicitud();
       showToast('✅ Solicitud enviada correctamente', 'success');
@@ -771,6 +809,7 @@ async function enviarSolicitud() {
       showToast('❌ ' + (result.mensaje || 'No se pudo enviar'), 'error');
     }
   } catch (error) {
+    console.error(error);
     showToast('❌ Error de conexión al enviar.', 'error');
   } finally {
     btn.disabled = false;

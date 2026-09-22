@@ -538,6 +538,43 @@ async function registrar(tipo) {
     obtenerUbicacion();
     return;
   }
+
+  // 🔧 VALIDACIÓN PREVIA: consultar el estado real en el backend
+  try {
+    const hoy = fechaLocalISO();
+    const checkRes = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&token=${TOKEN_EMPRESA}`);
+    const checkData = await checkRes.json();
+    const regsHoy = (checkData.registros || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    const ultimo = regsHoy[regsHoy.length - 1];
+    const estadoReal = ultimo && ultimo.tipo === 'entrada' ? 'dentro' : 'fuera';
+
+    // Sincronizar estado local con el real
+    if (estadoReal !== estadoActual) {
+      estadoActual = estadoReal;
+      localStorage.setItem('estado_actual', estadoActual);
+      actualizarUI();
+    }
+
+    // Bloquear registros duplicados
+    if (tipo === 'entrada' && estadoReal === 'dentro') {
+      showToast('⚠️ Ya tienes una entrada registrada. Registra tu SALIDA primero.', 'warn');
+      return;
+    }
+    if (tipo === 'salida' && estadoReal === 'fuera') {
+      showToast('⚠️ No tienes una entrada activa para registrar salida.', 'warn');
+      return;
+    }
+  } catch (e) {
+    console.warn('No se pudo validar el estado previo:', e);
+    // Si falla la validación, dejamos que continúe (mejor experiencia que bloquear)
+  }
+
+  const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
+  const txtOrig = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Registrando...';
+  }
   const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
   const txtOrig = btn ? btn.innerHTML : '';
   if (btn) {

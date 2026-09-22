@@ -489,9 +489,11 @@ async function registrar(tipo) {
     return;
   }
   const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
-  const txtOrig = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Registrando...';
+  const txtOrig = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Registrando...';
+  }
 
   const ahora = new Date();
   const registro = {
@@ -542,99 +544,62 @@ async function registrar(tipo) {
       return;
     }
 
-    const dentro = result.dentro_sucursal;
-    const fuera = dentro === false || dentro === 'NO' || (typeof dentro === 'string' && dentro.startsWith('NO'));
-    if (fuera) {
-      showToast('⚠️ Registro guardado, pero estás FUERA de la sucursal', 'warn');
+    console.log('✅ Registro guardado en backend:', result);
+
+    // ============ ACTUALIZAR UI (blindado) ============
+    try {
+      const dentro = result.dentro_sucursal;
+      const fuera = dentro === false || dentro === 'NO' || (typeof dentro === 'string' && dentro.startsWith('NO'));
+      if (fuera) {
+        showToast('⚠️ Registro guardado, pero estás FUERA de la sucursal', 'warn');
+      }
+
+      if (tipo === 'entrada') {
+        estadoActual = 'dentro';
+        localStorage.setItem('estado_actual', estadoActual);
+        iniciarContador();
+        const elUltEntrada = document.getElementById('lastEntrada');
+        if (elUltEntrada) elUltEntrada.textContent = registro.hora;
+      } else {
+        if (horaEntradaActual) {
+          const minutosEstaSesion = Math.floor((Date.now() - horaEntradaActual) / 60000);
+          minutosAcumuladosHoy += minutosEstaSesion;
+          localStorage.setItem('minutos_acumulados_hoy', minutosAcumuladosHoy.toString());
+        }
+        detenerContador();
+        estadoActual = 'fuera';
+        localStorage.setItem('estado_actual', estadoActual);
+        const elUltSalida = document.getElementById('lastSalida');
+        if (elUltSalida) elUltSalida.textContent = registro.hora;
+        const elTodayHours = document.getElementById('todayHours');
+        if (elTodayHours) elTodayHours.classList.remove('contando');
+      }
+
+      showToast(tipo === 'entrada' ? '✅ Entrada registrada' : '🔴 Salida registrada', 'success');
+      actualizarUI();
+    } catch (uiError) {
+      // 🔧 Si falla la UI, NO mostramos "error de conexión" porque el registro YA se guardó
+      console.error('⚠️ Error al actualizar UI (pero el registro SÍ se guardó):', uiError);
+      showToast('⚠️ Registro guardado. Recarga la página si ves datos desactualizados.', 'warn');
     }
 
-    if (tipo === 'entrada') {
-      estadoActual = 'dentro';
-      localStorage.setItem('estado_actual', estadoActual);
-      iniciarContador();
-      document.getElementById('lastEntrada').textContent = registro.hora;
-    } else {
-      if (horaEntradaActual) {
-        const minutosEstaSesion = Math.floor((Date.now() - horaEntradaActual) / 60000);
-        minutosAcumuladosHoy += minutosEstaSesion;
-        localStorage.setItem('minutos_acumulados_hoy', minutosAcumuladosHoy.toString());
-      }
-      detenerContador();
-      estadoActual = 'fuera';
-      localStorage.setItem('estado_actual', estadoActual);
-      document.getElementById('lastSalida').textContent = registro.hora;
-      document.getElementById('todayHours').classList.remove('contando');
+    // Refrescar estadísticas aparte (si falla, no afecta el mensaje principal)
+    try {
+      await cargarMisEstadisticas();
+    } catch (statsError) {
+      console.warn('No se pudieron refrescar las estadísticas:', statsError);
     }
-    showToast(tipo === 'entrada' ? '✅ Entrada registrada' : '🔴 Salida registrada', 'success');
-    actualizarUI();
-    cargarMisEstadisticas();
+
   } catch (error) {
-    console.error('❌ Error completo:', error);
-    showToast('❌ Error de conexión: ' + (error.message || 'desconocido'), 'error');
+    console.error('❌ Error de red:', error);
+    showToast('❌ Error de conexión al registrar. Verifica tu internet.', 'error');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = txtOrig;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = txtOrig;
+    }
   }
 }
-
-function actualizarUI() {
-  const badge = document.getElementById('statusBadge');
-  const statusText = document.getElementById('statusText');
-  const btnE = document.getElementById('btnEntrada');
-  const btnS = document.getElementById('btnSalida');
-  if (estadoActual === 'dentro') {
-    badge.className = 'status-badge dentro';
-    statusText.textContent = 'Dentro del trabajo';
-    btnE.disabled = true;
-    btnS.disabled = false;
-  } else {
-    badge.className = 'status-badge fuera';
-    statusText.textContent = 'Fuera del trabajo';
-    btnE.disabled = false;
-    btnS.disabled = true;
-    document.getElementById('todayHours').classList.remove('contando');
-  }
-}
-
-function cambiarTab(tab, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-' + tab).classList.add('active');
-  if (tab === 'estadisticas') cargarMisEstadisticas();
-  if (tab === 'solicitudes') cargarMisSolicitudes();
-}
-
-function calcularHorasPorDia(registros) {
-  const porDia = {};
-  registros.forEach(r => {
-    if (!porDia[r.fecha]) porDia[r.fecha] = [];
-    porDia[r.fecha].push(r);
-  });
-  let totalMin = 0;
-  const detalleDias = {};
-  Object.keys(porDia).forEach(fecha => {
-    const regs = porDia[fecha].sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
-    let minutosDia = 0;
-    let entradaPendiente = null;
-    regs.forEach(r => {
-      if (r.tipo === 'entrada') {
-        entradaPendiente = r.hora;
-      } else if (r.tipo === 'salida' && entradaPendiente) {
-        const en = timeToMin(entradaPendiente);
-        const sa = timeToMin(r.hora);
-        let diff = sa - en;
-        if (diff < 0) diff += 1440;
-        if (diff > 0 && diff < 16*60) minutosDia += diff;
-        entradaPendiente = null;
-      }
-    });
-    detalleDias[fecha] = minutosDia;
-    totalMin += minutosDia;
-  });
-  return { totalMin, detalleDias };
-}
-
 async function cargarMisEstadisticas() {
   if (!empleado) return;
   const hoy = new Date();

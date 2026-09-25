@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+<title>Admin Dashboard - Control de Asistencia</title>
+<style>
+  :root { --primary: #1a237e; --primary-light: #3949ab; --bg: #f4f6f8; --card: #fff; --text: #333; --border: #e0e0e0; --danger: #d32f2f; --success: #388e3c; --warning: #f57c00; --info: #1976d2; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: var(--bg); color: var(--text); }
+
+  #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: #333; color: #fff; padding: 12px 18px; border-radius: 6px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,.2); animation: slideIn .3s ease; max-width: 320px; }
+  .toast.success { background: var(--success); } .toast.error { background: var(--danger); } .toast.info { background: var(--info); }
+  @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+
+  .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .login-container { display: flex; height: 100vh; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a237e, #3949ab); }
+  .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+  .login-box h2 { color: var(--primary); margin-bottom: 20px; }
+  .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; }
+  .login-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+  .error { color: var(--danger); font-size: 14px; margin-top: 10px; display: none; }
+
+  .dashboard { display: none; }
+  .header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .header h1 { font-size: 20px; }
+  .user-info { font-size: 14px; opacity: 0.9; }
+  .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+  .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+
+  .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
+  .tab { padding: 10px 20px; cursor: pointer; border: none; background: none; font-size: 15px; font-weight: 600; color: #666; }
+  .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px; }
+
+  .card { background: var(--card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+  .stat-card { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+  .stat-card h3 { font-size: 13px; color: #666; margin-bottom: 10px; text-transform: uppercase; }
+  .stat-card .number { font-size: 28px; font-weight: bold; color: var(--primary); }
+  .stat-card.danger { border-left-color: var(--danger); } .stat-card.danger .number { color: var(--danger); }
+  .stat-card.success { border-left-color: var(--success); } .stat-card.success .number { color: var(--success); }
+  .stat-card.warning { border-left-color: var(--warning); } .stat-card.warning .number { color: var(--warning); }
+  .stat-card.info { border-left-color: var(--info); } .stat-card.info .number { color: var(--info); }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+  th { background: #f8f9fa; font-weight: 600; color: #555; font-size: 13px; }
+  tr:hover { background: #f8f9fa; }
+
+  .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; }
+  .badge-pending { background: #fff3cd; color: #856404; }
+  .badge-approved { background: #d4edda; color: #155724; }
+  .badge-rejected { background: #f8d7da; color: #721c24; }
+  .badge-info { background: #d1ecf1; color: #0c5460; }
+  .badge-exception { background: #e2d9f3; color: #5e35b1; }
+
+  .section-content { display: none; }
+  .section-content.active { display: block; }
+
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; margin: 0 5px; }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .semana-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+  .semana-nav { display: flex; gap: 10px; align-items: center; }
+  .dias-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 20px; }
+  .dia-card { background: white; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+  .dia-card .nombre { font-size: 12px; color: #666; margin-bottom: 5px; }
+  .dia-card .fecha { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+  .dia-card .stats { font-size: 12px; }
+  .dia-card .stats div { margin: 3px 0; }
+  .dia-card.hoy { border: 2px solid var(--primary); }
+
+  .registro-table { width: 100%; overflow-x: auto; }
+  .registro-table table { min-width: 800px; }
+  .registro-table th { background: var(--primary); color: white; }
+  .registro-table td { padding: 8px; text-align: center; }
+  .registro-table .entrada { color: var(--success); font-weight: bold; }
+  .registro-table .salida { color: var(--danger); font-weight: bold; }
+  .registro-table .ausente { color: #999; font-style: italic; }
+  .registro-table .excepcion { color: #5e35b1; font-weight: bold; font-size: 11px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 600; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 12px; padding: 30px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { margin-bottom: 20px; color: var(--primary); }
+  .modal-buttons { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
+  .search-box input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+
+  .empty-state { text-align: center; padding: 30px 15px; color: #888; }
+  .empty-state .icon { font-size: 40px; margin-bottom: 10px; opacity: .5; }
+
+  .legend { display: flex; gap: 15px; flex-wrap: wrap; font-size: 12px; color: #666; margin: 10px 0; }
+  .legend span::before { content: '●'; margin-right: 5px; font-size: 14px; }
+  .legend .l-entrada::before { color: var(--success); }
+  .legend .l-salida::before { color: var(--danger); }
+  .legend .l-excepcion::before { color: #5e35b1; }
+  .legend .l-ausente::before { color: #bbb; }
+
+    /* 🔧 Fix lista de empleados en reportes */
+  #repEmpLista {
+    display: block;
+    width: 100%;
+  }
+  #repEmpLista label {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #repEmpLista label:hover {
+    background: #f0f2f5;
+  }
+  #repEmpLista label input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  #repEmpLista label span {
+    flex: 1;
+    text-align: left;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 768px) {
+    .dias-grid { grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .dia-card { padding: 8px; } .dia-card .fecha { font-size: 14px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .tabs { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toastContainer"></div>
+
+<div id="loginScreen" class="login-container">
+  <div class="login-box">
+    <h2>🔐 Acceso Administrativo</h2>
+    <p style="color:#666; margin-bottom:20px;">Ingresa el Token de tu Empresa</p>
+    <input type="password" id="adminToken" placeholder="Token de Empresa" autocomplete="off">
+    <button id="loginBtn" onclick="loginAdmin()">Ingresar al Sistema</button>
+    <div id="loginError" class="error">Token inválido o empresa no encontrada.</div>
+  </div>
+</div>
+
+<div id="dashboard" class="dashboard">
+  <div class="header">
+    <div>
+      <h1 id="empresaTitle">Panel de Administración</h1>
+      <div class="user-info" id="empresaSubTitle">Cargando...</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('resumen', this)">📊 Resumen</button>
+      <button class="tab" onclick="showTab('hoy', this)">📅 Hoy / Semana</button>
+      <button class="tab" onclick="showTab('empleados', this)">👥 Empleados</button>
+      <button class="tab" onclick="showTab('agregar-excepcion', this)">➕ Agregar Excepción</button>
+      <button class="tab" onclick="showTab('solicitudes', this)">📝 Solicitudes <span id="pendingCount" class="badge badge-pending" style="display:none">0</span></button>
+      <button class="tab" onclick="showTab('reportes', this)">📥 Reportes</button>
+      <button class="tab" onclick="showTab('auditoria', this)">🔍 Auditoría</button>
+    </div>
+
+    <div id="resumen" class="section-content active">
+      <div class="stats-grid">
+        <div class="stat-card"><h3>Total Empleados</h3><div class="number" id="statEmpleados">-</div></div>
+        <div class="stat-card info"><h3>Registros Hoy</h3><div class="number" id="statRegistros">-</div></div>
+        <div class="stat-card danger"><h3>Incidencias</h3><div class="number" id="statIncidencias">-</div></div>
+        <div class="stat-card warning"><h3>Solicitudes Pendientes</h3><div class="number" id="statPendientes">-</div></div>
+      </div>
+      <div class="card">
+        <h3>Actividad Reciente</h3>
+        <table id="tablaReciente">
+          <thead><tr><th>Hora</th><th>Empleado</th><th>Tipo</th><th>Sucursal</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty-state">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="hoy" class="section-content">
+      <div class="card">
+        <div class="semana-header">
+          <h3>📅 Registro Semanal de Asistencia</h3>
+          <div class="semana-nav">
+            <button class="btn btn-primary" onclick="cambiarSemana(-1)">◀ Anterior</button>
+            <span id="semanaActual" style="font-weight:600; margin:0 10px;"></span>
+            <button class="btn btn-primary" onclick="cambiarSemana(1)">Siguiente ▶</button>
+          </div>
+        </div>
+        <div class="dias-grid" id="diasGrid"></div>
+        <div class="legend">
+          <span class="l-entrada">Entrada</span>
+          <span class="l-salida">Salida</span>
+          <span class="l-excepcion">Excepción</span>
+          <span class="l-ausente">Sin registro</span>
+        </div>
+        <h4 style="margin:20px 0 10px;">📋 Detalles de Registros</h4>
+        <div class="registro-table">
+          <table id="tablaRegistrosSemana">
+            <thead>
+              <tr>
+                <th>Empleado</th>
+                <th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyRegistrosSemana">
+              <tr><td colspan="8" class="empty-state">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="empleados" class="section-content">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+          <h3>Catálogo de Empleados</h3>
+          <div>
+            <button class="btn btn-success" onclick="abrirModalEmpleado()">➕ Nuevo Empleado</button>
+            <button class="btn btn-primary" onclick="cargarEmpleados()">🔄 Actualizar</button>
+          </div>
+        </div>
+        <div class="search-box">
+          <input type="text" id="buscarEmpleado" placeholder="Buscar por nombre, ID, email o departamento..." oninput="filtrarEmpleados()">
+        </div>
+        <table id="tablaEmpleados">
+          <thead><tr><th>ID</th><th>Nombre</th><th>Departamento</th><th>Sucursal</th><th>Turno</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+          <tbody><tr><td colspan="7" class="empty-state">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="agregar-excepcion" class="section-content">
+      <div class="card">
+        <h3>➕ Agregar Excepción Manualmente</h3>
+        <p style="color:#666; margin-bottom:15px;">Registra vacaciones, permisos, incapacidades o eventos. Si eliges <b>Evento</b>, se aplicará a todos los empleados.</p>
+        <div style="background:#f8f9fa; padding:20px; border-radius:8px;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Empleado *</label>
+              <select id="excepcionEmpleado">
+                <option value="">-- Seleccionar --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo *</label>
+              <select id="excepcionTipo">
+                <option value="VACACIONES">Vacaciones</option>
+                <option value="PERMISO">Permiso</option>
+                <option value="INCAPACIDAD">Incapacidad</option>
+                <option value="FALTA_JUST">Falta Justificada</option>
+                <option value="RETARDO">Retardo Justificado</option>
+                <option value="EVENTO">Evento (todos los empleados)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fecha Inicio *</label>
+              <input type="date" id="excepcionFechaInicio">
+            </div>
+            <div class="form-group">
+              <label>Fecha Fin *</label>
+              <input type="date" id="excepcionFechaFin">
+            </div>
+            <div class="form-group">
+              <label>Hora Inicio (permisos)</label>
+              <input type="time" id="excepcionHoraInicio">
+            </div>
+            <div class="form-group">
+              <label>Hora Fin (permisos)</label>
+              <input type="time" id="excepcionHoraFin">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Motivo *</label>
+              <textarea id="excepcionMotivo" rows="3" placeholder="Describe el motivo..."></textarea>
+            </div>
+          </div>
+          <button id="btnGuardarExcepcion" onclick="crearExcepcionManual()" class="btn btn-success" style="width:100%; padding:12px;">💾 Guardar Excepción</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="solicitudes" class="section-content">
+      <div class="card">
+        <h3>📝 Solicitudes Pendientes de Aprobación</h3>
+        <table id="tablaSolicitudes">
+          <thead><tr><th>Empleado</th><th>Tipo</th><th>Fecha</th><th>Motivo</th><th>Acción</th></tr></thead>
+          <tbody><tr><td colspan="5" class="empty-state">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ REPORTES ============ -->
+    <div id="reportes" class="section-content">
+      <div class="card">
+        <h3>📥 Generación de Reportes</h3>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">
+          Descarga reportes en formato Excel (.xlsx) con datos reales del periodo seleccionado.
+        </p>
+
+        <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:20px; border-left:4px solid var(--primary);">
+          <h4 style="color:var(--primary); margin-bottom:10px;">📊 Reporte General de Asistencia</h4>
+          <p style="color:#666; font-size:13px; margin-bottom:15px;">
+            Incluye todos los empleados con horas trabajadas, retardos, faltas, excepciones y cumplimiento.
+          </p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Fecha Inicio *</label>
+              <input type="date" id="repGenDesde">
+            </div>
+            <div class="form-group">
+              <label>Fecha Fin *</label>
+              <input type="date" id="repGenHasta">
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'hoy')">Hoy</button>
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'semana')">Esta semana</button>
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'mes')">Este mes</button>
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'mesAnterior')">Mes anterior</button>
+          </div>
+          <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:10px;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
+              <input type="checkbox" id="repGenIncluirRegistros" checked>
+              Incluir hoja detallada de registros
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
+              <input type="checkbox" id="repGenIncluirExcepciones" checked>
+              Incluir hoja de excepciones
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
+              <input type="checkbox" id="repGenSoloIncidencias">
+              Solo con incidencias
+            </label>
+          </div>
+          <button id="btnRepGeneral" class="btn btn-primary" style="width:100%; padding:12px; margin-top:5px;" onclick="descargarReporteGeneral()">
+            📥 Descargar Reporte General
+          </button>
+        </div>
+
+        <div style="background:#f8f9fa; padding:20px; border-radius:8px; border-left:4px solid var(--info);">
+          <h4 style="color:var(--info); margin-bottom:10px;">👤 Reporte Detallado por Empleado</h4>
+          <p style="color:#666; font-size:13px; margin-bottom:15px;">
+            Selecciona uno o varios empleados para generar un reporte individual con marcas, horas diarias y resumen.
+          </p>
+
+          <div class="form-group">
+            <label>Buscar empleado</label>
+            <input type="text" id="repEmpBuscar" placeholder="Filtra por nombre, ID o departamento..." oninput="filtrarListaEmpleadosReporte()">
+          </div>
+
+          <div class="form-group">
+            <label>
+              Empleados seleccionados
+              <button class="btn btn-sm" style="float:right; padding:2px 8px; font-size:11px; background:#e0e0e0; margin:0;" onclick="toggleTodosEmpleadosReporte()">Todos / Ninguno</button>
+            </label>
+            <div id="repEmpLista" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:8px; background:white;">
+              <div style="color:#888; font-size:13px;">Cargando empleados...</div>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top:15px;">
+            <div class="form-group">
+              <label>Fecha Inicio *</label>
+              <input type="date" id="repEmpDesde">
+            </div>
+            <div class="form-group">
+              <label>Fecha Fin *</label>
+              <input type="date" id="repEmpHasta">
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'hoy')">Hoy</button>
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'semana')">Esta semana</button>
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'mes')">Este mes</button>
+            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'mesAnterior')">Mes anterior</button>
+          </div>
+
+          <button id="btnRepEmpleado" class="btn" style="width:100%; padding:12px; background:var(--info); color:white;" onclick="descargarReporteEmpleados()">
+            📥 Descargar Reporte por Empleado
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="auditoria" class="section-content">
+      <div class="card">
+        <h3>🔍 Log de Cambios y Accesos</h3>
+        <table id="tablaAuditoria">
+          <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty-state">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalEmpleado">
+  <div class="modal">
+    <h3 id="modalEmpleadoTitulo">Nuevo Empleado</h3>
+    <form id="formEmpleado" onsubmit="guardarEmpleado(event)">
+      <input type="hidden" id="empIdSistema">
+
+      <!-- Datos básicos -->
+      <h4 style="margin-bottom:10px; color:var(--primary); font-size:14px; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:6px;">Datos del Empleado</h4>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Número de Empleado (ID) *</label>
+          <input type="text" id="empNumero" required placeholder="Ej: 2525">
+        </div>
+        <div class="form-group">
+          <label>Nombre Completo *</label>
+          <input type="text" id="empNombre" required placeholder="Juan Pérez García">
+        </div>
+        <div class="form-group">
+          <label>Departamento *</label>
+          <input type="text" id="empDepartamento" required placeholder="Ventas">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="empEmail" placeholder="juan@empresa.com">
+        </div>
+        <div class="form-group">
+  <label>PIN de acceso * (4-6 dígitos)</label>
+  <input type="text" id="empPin" required placeholder="Ej: 1234" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="off">
+</div>
+        <div class="form-group">
+          <label>Sucursal *</label>
+          <select id="empSucursal" required>
+            <option value="">-- Seleccionar --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Turno *</label>
+          <select id="empTurno" required>
+            <option value="">-- Seleccionar --</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Dirección</label>
+          <input type="text" id="empDireccion" placeholder="Av. Reforma 123, Col. Centro, CDMX">
+        </div>
+      </div>
+
+      <!-- Contacto -->
+      <h4 style="margin:20px 0 10px; color:var(--primary); font-size:14px; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:6px;">Contacto</h4>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" id="empTelefono" placeholder="55 1234 5678" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label>Teléfono de Emergencia</label>
+          <input type="tel" id="empTelEmergencia" placeholder="55 8765 4321" maxlength="20">
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Nombre del Contacto de Emergencia</label>
+          <input type="text" id="empNombreEmergencia" placeholder="María García (esposa)">
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button type="button" class="btn" style="background:#e0e0e0;" onclick="cerrarModalEmpleado()">Cancelar</button>
+        <button type="submit" class="btn btn-success" id="btnGuardarEmpleado">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec';
+
+let currentToken = localStorage.getItem('admin_token');
+let currentEmpresa = null;
+let empleadosCache = [];
+let sucursalesCache = [];
+let turnosCache = [];
+let semanaOffset = 0;
+let registrosSemana = {};
+let semanaRango = { desde: null, hasta: null, inicio: null };
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fechaLocalISO(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function setLoading(btn, loading, textoOriginal = null) {
+  if (!btn) return;
+  if (loading) {
+    btn.dataset.original = btn.innerHTML;
+    btn.innerHTML = '<span class="loading"></span>Procesando...';
+    btn.disabled = true;
+  } else {
+    btn.innerHTML = textoOriginal || btn.dataset.original || btn.innerHTML;
+    btn.disabled = false;
+  }
+}
+
+window.onload = function() {
+  if (currentToken) verificarSesion();
+};
+
+async function verificarSesion() {
+  try {
+    const res = await fetch(`${API_URL}?accion=verificar_token&token=${currentToken}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      currentEmpresa = data.empresa;
+      mostrarDashboard();
+    } else { logout(); }
+  } catch (e) { console.error(e); logout(); }
+}
+
+async function loginAdmin() {
+  const token = document.getElementById('adminToken').value.trim();
+  if (!token) { toast('Ingresa un token', 'error'); return; }
+  const btn = document.getElementById('loginBtn');
+  setLoading(btn, true);
+  try {
+    const res = await fetch(`${API_URL}?accion=verificar_token&token=${token}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      currentToken = token;
+      currentEmpresa = data.empresa;
+      localStorage.setItem('admin_token', token);
+      mostrarDashboard();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+      setLoading(btn, false, 'Ingresar al Sistema');
+    }
+  } catch (e) {
+    document.getElementById('loginError').textContent = 'Error de conexión';
+    document.getElementById('loginError').style.display = 'block';
+    setLoading(btn, false, 'Ingresar al Sistema');
+  }
+}
+
+function mostrarDashboard() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('empresaTitle').textContent = `Panel: ${currentEmpresa.nombre}`;
+  document.getElementById('empresaSubTitle').textContent = `ID: ${currentEmpresa.id} | Admin: ${currentEmpresa.admin}`;
+  cargarDatosIniciales();
+}
+
+function logout() {
+  localStorage.removeItem('admin_token');
+  location.reload();
+}
+
+async function cargarDatosIniciales() {
+  await cargarEmpleados();
+  await cargarSucursalesYTurnos();
+  cargarSolicitudes();
+  cargarAuditoria();
+  cargarRegistrosRecientes();
+  cargarDashboardStats();
+  cargarSemanaActual();
+}
+
+function cambiarSemana(direccion) {
+  semanaOffset += direccion;
+  cargarSemanaActual();
+}
+
+async function cargarSemanaActual() {
+  const hoy = new Date();
+  const inicioSemana = new Date(hoy);
+  const dia = hoy.getDay();
+  const offsetLunes = dia === 0 ? -6 : 1 - dia;
+  inicioSemana.setDate(hoy.getDate() + offsetLunes + (semanaOffset * 7));
+  inicioSemana.setHours(0,0,0,0);
+
+  const finSemana = new Date(inicioSemana);
+  finSemana.setDate(inicioSemana.getDate() + 6);
+  finSemana.setHours(23,59,59,999);
+
+  semanaRango = {
+    desde: fechaLocalISO(inicioSemana),
+    hasta: fechaLocalISO(finSemana),
+    inicio: new Date(inicioSemana)
+  };
+
+  document.getElementById('semanaActual').textContent =
+    `${inicioSemana.toLocaleDateString('es-MX', {day:'2-digit', month:'short'})} - ${finSemana.toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'})}`;
+
+  renderDiasSemana(inicioSemana);
+  await cargarRegistrosSemana(semanaRango.desde, semanaRango.hasta);
+}
+
+function renderDiasSemana(inicio) {
+  const grid = document.getElementById('diasGrid');
+  const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const hoy = new Date();
+  grid.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const fecha = new Date(inicio);
+    fecha.setDate(inicio.getDate() + i);
+    const esHoy = fecha.toDateString() === hoy.toDateString();
+    grid.innerHTML += `
+      <div class="dia-card ${esHoy ? 'hoy' : ''}">
+        <div class="nombre">${dias[i]}</div>
+        <div class="fecha">${fecha.getDate()}</div>
+        <div class="stats" id="stats-dia-${i}"><div style="color:#bbb">…</div></div>
+      </div>
+    `;
+  }
+}
+
+async function cargarRegistrosSemana(desde, hasta) {
+  const tbody = document.getElementById('tbodyRegistrosSemana');
+  tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando…</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}?accion=concentrado&desde=${desde}&hasta=${hasta}&token=${currentToken}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      registrosSemana = data;
+      renderTablaRegistrosSemana();
+      actualizarStatsDias();
+    } else {
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Error: ${data.mensaje || 'No se pudo cargar'}</td></tr>`;
+    }
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+function renderTablaRegistrosSemana() {
+  const tbody = document.getElementById('tbodyRegistrosSemana');
+  const empleados = registrosSemana.empleados || [];
+
+  if (empleados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="icon">📭</div>No hay registros esta semana</td></tr>';
+    return;
+  }
+
+  const fechas = [];
+  for (let i = 0; i < 7; i++) {
+    const f = new Date(semanaRango.inicio);
+    f.setDate(f.getDate() + i);
+    fechas.push(fechaLocalISO(f));
+  }
+
+  tbody.innerHTML = empleados.map(emp => {
+    const dias = emp.detalle_dias || {};
+    let html = `<tr><td><strong>${emp.nombre}</strong><br><small>${emp.id}</small></td>`;
+    for (let i = 0; i < 7; i++) {
+      const fechaStr = fechas[i];
+      const diaData = dias[fechaStr];
+      if (diaData && diaData.excepcion) {
+        html += `<td><div class="excepcion">${diaData.excepcion_tipo || 'EXC'}</div><small>${diaData.excepcion_motivo || ''}</small></td>`;
+      } else if (diaData && diaData.entradas && diaData.entradas.length > 0) {
+        const entrada = diaData.entradas[0];
+        const salida = diaData.salidas && diaData.salidas[0] ? diaData.salidas[0] : '—';
+        html += `<td><div class="entrada">${entrada}</div><div class="salida">${salida}</div></td>`;
+      } else {
+        html += `<td class="ausente">—</td>`;
+      }
+    }
+    html += '</tr>';
+    return html;
+  }).join('');
+}
+
+function actualizarStatsDias() {
+  const empleados = registrosSemana.empleados || [];
+  const fechas = [];
+  for (let i = 0; i < 7; i++) {
+    const f = new Date(semanaRango.inicio);
+    f.setDate(f.getDate() + i);
+    fechas.push(fechaLocalISO(f));
+  }
+
+  for (let i = 0; i < 7; i++) {
+    const fechaStr = fechas[i];
+    let presentes = 0, ausentes = 0, excepciones = 0;
+    empleados.forEach(emp => {
+      const diaData = emp.detalle_dias ? emp.detalle_dias[fechaStr] : null;
+      if (diaData && diaData.excepcion) excepciones++;
+      else if (diaData && diaData.entradas && diaData.entradas.length > 0) presentes++;
+      else ausentes++;
+    });
+    const statsDiv = document.getElementById(`stats-dia-${i}`);
+    if (statsDiv) {
+      statsDiv.innerHTML = `
+        <div style="color:var(--success)">✓ ${presentes}</div>
+        ${excepciones ? `<div style="color:#5e35b1">◐ ${excepciones}</div>` : ''}
+        <div style="color:#999">✗ ${ausentes}</div>
+      `;
+    }
+  }
+}
+
+async function cargarEmpleados() {
+  const tbody = document.querySelector('#tablaEmpleados tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}?accion=lista_empleados&token=${currentToken}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      empleadosCache = data.empleados || [];
+      document.getElementById('statEmpleados').textContent = data.total;
+      actualizarSelectEmpleados();
+      renderEmpleados(data.empleados);
+    } else {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${data.mensaje || 'No se pudo cargar'}</td></tr>`;
+    }
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+function renderEmpleados(lista) {
+  const tbody = document.querySelector('#tablaEmpleados tbody');
+  if (!lista || lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="icon">👥</div>No hay empleados registrados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = lista.map(emp => `
+    <tr>
+      <td><b>${emp.id}</b></td>
+      <td>${emp.nombre}</td>
+      <td>${emp.departamento}</td>
+      <td>${emp.sucursal_id}</td>
+      <td>${emp.turno_id}</td>
+      <td>${emp.email || '—'}</td>
+      <td>${emp.telefono || '—'}</td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="editarEmpleado('${emp.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarEmpleado('${emp.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filtrarEmpleados() {
+  const q = document.getElementById('buscarEmpleado').value.toLowerCase().trim();
+  if (!q) { renderEmpleados(empleadosCache); return; }
+  const filtrados = empleadosCache.filter(emp =>
+    (emp.nombre || '').toLowerCase().includes(q) ||
+    (emp.id || '').toLowerCase().includes(q) ||
+    (emp.departamento || '').toLowerCase().includes(q) ||
+    (emp.email || '').toLowerCase().includes(q)
+  );
+  renderEmpleados(filtrados);
+}
+
+async function cargarSucursalesYTurnos() {
+  try {
+    const [sucRes, turRes] = await Promise.all([
+      fetch(`${API_URL}?accion=sucursales&token=${currentToken}`),
+      fetch(`${API_URL}?accion=turnos&token=${currentToken}`)
+    ]);
+    const sucData = await sucRes.json();
+    const turData = await turRes.json();
+    sucursalesCache = sucData.sucursales || [];
+    turnosCache = turData.turnos || [];
+    actualizarSelectSucursalesTurnos();
+  } catch (e) { console.error(e); }
+}
+
+function actualizarSelectSucursalesTurnos() {
+  const selectSuc = document.getElementById('empSucursal');
+  selectSuc.innerHTML = '<option value="">-- Seleccionar --</option>';
+  sucursalesCache.forEach(s => {
+    selectSuc.innerHTML += `<option value="${s.id}">${s.nombre}</option>`;
+  });
+  const selectTur = document.getElementById('empTurno');
+  selectTur.innerHTML = '<option value="">-- Seleccionar --</option>';
+  turnosCache.forEach(t => {
+    selectTur.innerHTML += `<option value="${t.turno_id}">${t.nombre}</option>`;
+  });
+}
+
+function actualizarSelectEmpleados() {
+  const select = document.getElementById('excepcionEmpleado');
+  select.innerHTML = '<option value="">-- Seleccionar --</option>';
+  empleadosCache.forEach(emp => {
+    select.innerHTML += `<option value="${emp.id}">${emp.id} - ${emp.nombre}</option>`;
+  });
+}
+
+function abrirModalEmpleado(empleado = null) {
+  document.getElementById('modalEmpleadoTitulo').textContent = empleado ? '✏️ Editar Empleado' : '➕ Nuevo Empleado';
+  document.getElementById('empIdSistema').value = empleado ? empleado.id : '';
+  document.getElementById('empNumero').value = empleado ? empleado.id : '';
+  document.getElementById('empNumero').disabled = !!empleado;
+  document.getElementById('empNombre').value = empleado ? empleado.nombre : '';
+  document.getElementById('empDepartamento').value = empleado ? empleado.departamento : '';
+  document.getElementById('empEmail').value = empleado ? (empleado.email || '') : '';
+  document.getElementById('empSucursal').value = empleado ? empleado.sucursal_id : '';
+  document.getElementById('empTurno').value = empleado ? empleado.turno_id : '';
+  // 🔧 Nuevos campos
+  document.getElementById('empDireccion').value = empleado ? (empleado.direccion || '') : '';
+  document.getElementById('empTelefono').value = empleado ? (empleado.telefono || '') : '';
+  document.getElementById('empTelEmergencia').value = empleado ? (empleado.telefono_emergencia || '') : '';
+  document.getElementById('empNombreEmergencia').value = empleado ? (empleado.nombre_emergencia || '') : '';
+  document.getElementById('empPin').value = empleado ? (empleado.pin || '') : '';
+  document.getElementById('modalEmpleado').classList.add('show');
+}
+
+function cerrarModalEmpleado() {
+  document.getElementById('modalEmpleado').classList.remove('show');
+  document.getElementById('formEmpleado').reset();
+  document.getElementById('empNumero').disabled = false;
+}
+
+function editarEmpleado(id) {
+  const emp = empleadosCache.find(e => e.id === id);
+  if (emp) abrirModalEmpleado(emp);
+}
+
+async function eliminarEmpleado(id) {
+  if (!confirm('¿Estás seguro de eliminar este empleado?')) return;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        token: currentToken,
+        accion: 'eliminar_empleado',
+        id_sistema: id,
+        usuario: currentEmpresa.admin
+      }),
+      redirect: 'follow'
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast('Empleado eliminado', 'success');
+      cargarEmpleados();
+    } else {
+      toast('Error: ' + data.mensaje, 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión', 'error');
+  }
+}
+
+async function guardarEmpleado(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnGuardarEmpleado');
+  setLoading(btn, true);
+  const idSistema = document.getElementById('empIdSistema').value;
+const data = {
+  token: currentToken,
+  accion: idSistema ? 'actualizar_empleado' : 'crear_empleado',
+  numero_empleado: document.getElementById('empNumero').value.trim(),
+  nombre: document.getElementById('empNombre').value.trim(),
+  departamento: document.getElementById('empDepartamento').value.trim(),
+  email: document.getElementById('empEmail').value.trim(),
+  sucursal_id: document.getElementById('empSucursal').value,
+  turno_id: document.getElementById('empTurno').value,
+  pin: document.getElementById('empPin').value.trim(),   // ⬅️ NUEVO
+  creado_por: currentEmpresa.admin,
+  modificado_por: currentEmpresa.admin
+};
+  if (idSistema) data.id_sistema = idSistema;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(data),
+      redirect: 'follow'
+    });
+    const result = await res.json();
+    if (result.status === 'ok') {
+      toast(result.mensaje || 'Guardado', 'success');
+      cerrarModalEmpleado();
+      cargarEmpleados();
+    } else {
+      toast('Error: ' + result.mensaje, 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión', 'error');
+  } finally {
+    setLoading(btn, false, '💾 Guardar');
+  }
+}
+
+async function crearExcepcionManual() {
+  const btn = document.getElementById('btnGuardarExcepcion');
+  const empleadoId = document.getElementById('excepcionEmpleado').value;
+  const tipo = document.getElementById('excepcionTipo').value;
+  const fechaInicio = document.getElementById('excepcionFechaInicio').value;
+  const fechaFin = document.getElementById('excepcionFechaFin').value;
+  const horaInicio = document.getElementById('excepcionHoraInicio').value;
+  const horaFin = document.getElementById('excepcionHoraFin').value;
+  const motivo = document.getElementById('excepcionMotivo').value.trim();
+
+  if (tipo !== 'EVENTO' && !empleadoId) {
+    toast('Selecciona un empleado', 'error');
+    return;
+  }
+  if (!fechaInicio || !fechaFin || !motivo) {
+    toast('Completa fecha inicio, fin y motivo', 'error');
+    return;
+  }
+  if (fechaFin < fechaInicio) {
+    toast('La fecha fin no puede ser anterior a la de inicio', 'error');
+    return;
+  }
+
+  const emp = empleadoId ? empleadosCache.find(e => e.id === empleadoId) : null;
+  if (tipo !== 'EVENTO' && !emp) {
+    toast('Empleado no encontrado', 'error');
+    return;
+  }
+
+  let accion;
+  if (tipo === 'EVENTO') accion = 'crear_evento';
+  else if (tipo === 'VACACIONES' || tipo === 'INCAPACIDAD') accion = 'crear_vacaciones';
+  else accion = 'solicitar_justificacion';
+
+  const data = {
+    token: currentToken,
+    accion,
+    tipo,
+    empleado_id: tipo === 'EVENTO' ? '*' : emp.id,
+    numero_empleado: tipo === 'EVENTO' ? '*' : emp.id,
+    empleado_nombre: tipo === 'EVENTO' ? 'Todos los empleados' : emp.nombre,
+    sucursal_id: tipo === 'EVENTO' ? '*' : emp.sucursal_id,
+    turno_id: tipo === 'EVENTO' ? '*' : emp.turno_id,
+    fecha: fechaInicio,
+    fecha_inicio: fechaInicio,
+    fecha_fin: fechaFin,
+    hora_inicio: horaInicio,
+    hora_fin: horaFin,
+    motivo,
+    creado_por: currentEmpresa.admin
+  };
+
+  setLoading(btn, true);
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data),
+      redirect: 'follow'
+    });
+    const result = await response.json();
+    if (result.status === 'ok') {
+      toast('Excepción creada correctamente', 'success');
+      document.getElementById('excepcionMotivo').value = '';
+      document.getElementById('excepcionHoraInicio').value = '';
+      document.getElementById('excepcionHoraFin').value = '';
+      cargarSemanaActual();
+    } else {
+      toast('Error: ' + result.mensaje, 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión', 'error');
+  } finally {
+    setLoading(btn, false, '💾 Guardar Excepción');
+  }
+}
+
+async function cargarSolicitudes() {
+  const tbody = document.querySelector('#tablaSolicitudes tbody');
+  tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Cargando…</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}?accion=solicitudes_pendientes&token=${currentToken}`);
+    const data = await res.json();
+    const lista = data.solicitudes || [];
+    if (lista.length > 0) {
+      document.getElementById('pendingCount').style.display = 'inline-block';
+      document.getElementById('pendingCount').textContent = lista.length;
+      document.getElementById('statPendientes').textContent = lista.length;
+      tbody.innerHTML = lista.map(sol => `
+        <tr>
+          <td>${sol.empleado_nombre}<br><small>${sol.empleado_id}</small></td>
+          <td><span class="badge badge-pending">${sol.tipo}</span></td>
+          <td>${sol.fecha_inicio}</td>
+          <td>${sol.motivo}</td>
+          <td>
+            <button class="btn btn-success btn-sm" onclick="aprobarSolicitud('${sol.id}')">✔️</button>
+            <button class="btn btn-danger btn-sm" onclick="rechazarSolicitud('${sol.id}')">❌</button>
+          </td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="icon">✅</div>No hay solicitudes pendientes</td></tr>';
+      document.getElementById('statPendientes').textContent = '0';
+      document.getElementById('pendingCount').style.display = 'none';
+    }
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+async function aprobarSolicitud(id) {
+  if (!confirm('¿Aprobar esta solicitud?')) return;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({token: currentToken, accion: 'aprobar_solicitud', id, aprobado_por: currentEmpresa.admin}),
+      redirect: 'follow'
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast('Solicitud aprobada', 'success');
+      cargarSolicitudes();
+    } else {
+      toast('Error: ' + (data.mensaje || 'No se pudo aprobar'), 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión', 'error');
+  }
+}
+
+async function rechazarSolicitud(id) {
+  const obs = prompt('Motivo del rechazo:');
+  if (!obs) return;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({token: currentToken, accion: 'rechazar_solicitud', id, aprobado_por: currentEmpresa.admin, observaciones: obs}),
+      redirect: 'follow'
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast('Solicitud rechazada', 'info');
+      cargarSolicitudes();
+    } else {
+      toast('Error: ' + (data.mensaje || 'No se pudo rechazar'), 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión', 'error');
+  }
+}
+
+async function cargarAuditoria() {
+  const tbody = document.querySelector('#tablaAuditoria tbody');
+  tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Cargando…</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}?accion=auditoria&token=${currentToken}`);
+    const data = await res.json();
+    const logs = data.logs || [];
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin registros de auditoría</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.slice(-20).reverse().map(log => {
+      let fecha = '';
+      try { fecha = new Date(log.timestamp).toLocaleString('es-MX'); } catch(e) { fecha = log.timestamp; }
+      return `<tr><td><small>${fecha}</small></td><td>${log.usuario}</td><td><b>${log.accion}</b></td><td><small>${log.tipo}</small></td></tr>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+async function cargarRegistrosRecientes() {
+  const tbody = document.querySelector('#tablaReciente tbody');
+  tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Cargando…</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}?accion=registros_recientes&token=${currentToken}`);
+    const data = await res.json();
+    const regs = data.registros || [];
+    document.getElementById('statRegistros').textContent = data.total ?? regs.length;
+    if (regs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin registros recientes</td></tr>';
+      return;
+    }
+    tbody.innerHTML = regs.slice(0, 10).map(r => {
+      const tipoBadge = r.tipo === 'entrada'
+        ? '<span class="badge badge-approved">Entrada</span>'
+        : '<span class="badge badge-info">Salida</span>';
+      return `<tr><td>${r.hora}</td><td>${r.nombre}</td><td>${tipoBadge}</td><td>${r.sucursal}</td></tr>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+async function cargarDashboardStats() {
+  try {
+    const hoy = fechaLocalISO(new Date());
+    const res = await fetch(`${API_URL}?accion=dashboard&desde=${hoy}&hasta=${hoy}&token=${currentToken}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      document.getElementById('statIncidencias').textContent = (data.fuera_sucursal || 0) + (data.retardos || 0);
+    }
+  } catch (e) { console.error(e); }
+}
+
+function showTab(tabId, btn) {
+  document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+  if (tabId === 'empleados' && empleadosCache.length === 0) cargarEmpleados();
+  if (tabId === 'agregar-excepcion') {
+    if (empleadosCache.length === 0) cargarEmpleados();
+    else actualizarSelectEmpleados();
+  }
+  if (tabId === 'reportes') inicializarReportes();
+}
+
+// ================================================================
+//  REPORTES EXCEL (SheetJS)
+// ================================================================
+
+let empleadosReporteCache = [];
+
+function inicializarReportes() {
+  empleadosReporteCache = empleadosCache || [];
+  renderListaEmpleadosReporte(empleadosReporteCache);
+
+  const hoy = new Date();
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const defDesde = fechaLocalISO(inicioMes);
+  const defHasta = fechaLocalISO(hoy);
+
+  if (!document.getElementById('repGenDesde').value) {
+    document.getElementById('repGenDesde').value = defDesde;
+    document.getElementById('repGenHasta').value = defHasta;
+  }
+  if (!document.getElementById('repEmpDesde').value) {
+    document.getElementById('repEmpDesde').value = defDesde;
+    document.getElementById('repEmpHasta').value = defHasta;
+  }
+}
+
+function renderListaEmpleadosReporte(lista) {
+  const cont = document.getElementById('repEmpLista');
+  if (!lista || lista.length === 0) {
+    cont.innerHTML = '<div style="color:#888; font-size:13px; padding:10px;">Sin empleados</div>';
+    return;
+  }
+  cont.innerHTML = lista.map(emp => `
+    <label>
+      <input type="checkbox" class="rep-emp-check" value="${emp.id}" data-nombre="${String(emp.nombre).replace(/"/g,'&quot;')}">
+      <span><b>${emp.id}</b> - ${emp.nombre} <span style="color:#888;">(${emp.departamento})</span></span>
+    </label>
+  `).join('');
+}
+
+function filtrarListaEmpleadosReporte() {
+  const q = document.getElementById('repEmpBuscar').value.toLowerCase().trim();
+  if (!q) { renderListaEmpleadosReporte(empleadosReporteCache); return; }
+  const filtrados = empleadosReporteCache.filter(e =>
+    (e.nombre || '').toLowerCase().includes(q) ||
+    (e.id || '').toLowerCase().includes(q) ||
+    (e.departamento || '').toLowerCase().includes(q)
+  );
+  renderListaEmpleadosReporte(filtrados);
+}
+
+function toggleTodosEmpleadosReporte() {
+  const checks = document.querySelectorAll('.rep-emp-check');
+  const todos = Array.from(checks).every(c => c.checked);
+  checks.forEach(c => c.checked = !todos);
+}
+
+function setRangoRapido(prefix, tipo) {
+  const hoy = new Date();
+  let desde, hasta;
+  switch (tipo) {
+    case 'hoy':
+      desde = hasta = fechaLocalISO(hoy);
+      break;
+    case 'semana': {
+      const d = new Date(hoy);
+      const dow = d.getDay();
+      const off = dow === 0 ? -6 : 1 - dow;
+      const lunes = new Date(d); lunes.setDate(d.getDate() + off);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+      desde = fechaLocalISO(lunes);
+      hasta = fechaLocalISO(domingo);
+      break;
+    }
+    case 'mes': {
+      const ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+      desde = fechaLocalISO(ini);
+      hasta = fechaLocalISO(fin);
+      break;
+    }
+    case 'mesAnterior': {
+      const ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+      const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+      desde = fechaLocalISO(ini);
+      hasta = fechaLocalISO(fin);
+      break;
+    }
+  }
+  if (prefix === 'rep') {
+    document.getElementById('repGenDesde').value = desde;
+    document.getElementById('repGenHasta').value = hasta;
+  } else {
+    document.getElementById('repEmpDesde').value = desde;
+    document.getElementById('repEmpHasta').value = hasta;
+  }
+}
+
+async function descargarReporteGeneral() {
+  const btn = document.getElementById('btnRepGeneral');
+  const desde = document.getElementById('repGenDesde').value;
+  const hasta = document.getElementById('repGenHasta').value;
+  const incluirRegistros = document.getElementById('repGenIncluirRegistros').checked;
+  const incluirExcepciones = document.getElementById('repGenIncluirExcepciones').checked;
+  const soloIncidencias = document.getElementById('repGenSoloIncidencias').checked;
+
+  if (!desde || !hasta) { toast('Selecciona el rango de fechas', 'error'); return; }
+  if (desde > hasta) { toast('La fecha inicial no puede ser mayor a la final', 'error'); return; }
+
+  setLoading(btn, true);
+
+  try {
+    const resConc = await fetch(`${API_URL}?accion=concentrado&desde=${desde}&hasta=${hasta}&token=${currentToken}`);
+    const dataConc = await resConc.json();
+    if (dataConc.status !== 'ok') {
+      toast('Error al obtener datos: ' + (dataConc.mensaje || ''), 'error');
+      return;
+    }
+
+    let excepciones = [];
+    if (incluirExcepciones) {
+      try {
+        const resExc = await fetch(`${API_URL}?accion=excepciones&token=${currentToken}`);
+        const dataExc = await resExc.json();
+        if (dataExc.status === 'ok') {
+          excepciones = (dataExc.excepciones || []).filter(e => {
+            const fi = e.fecha_inicio, ff = e.fecha_fin || e.fecha_inicio;
+            return !(ff < desde || fi > hasta);
+          });
+        }
+      } catch (e) { console.warn('No se pudieron traer excepciones:', e); }
+    }
+
+    let registrosDetallados = [];
+    if (incluirRegistros) {
+      const empleadosConDatos = (dataConc.empleados || []).map(e => e.id);
+      const promesas = empleadosConDatos.map(id =>
+        fetch(`${API_URL}?accion=consultar&empleado_id=${encodeURIComponent(id)}&desde=${desde}&hasta=${hasta}&token=${currentToken}`)
+          .then(r => r.json())
+          .catch(() => ({ registros: [] }))
+      );
+      const resultados = await Promise.all(promesas);
+      resultados.forEach(r => {
+        if (r && r.registros) registrosDetallados = registrosDetallados.concat(r.registros);
+      });
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    let empleadosFuente = dataConc.empleados || [];
+    if (soloIncidencias) {
+      empleadosFuente = empleadosFuente.filter(e =>
+        (e.fuera_horario || 0) + (e.fuera_ubicacion || 0) > 0
+      );
+    }
+
+    const filasResumen = empleadosFuente.map(e => ({
+      'ID Empleado': e.id,
+      'Nombre': e.nombre,
+      'Departamento': e.departamento,
+      'Sucursal': e.sucursal_id,
+      'Turno': e.turno_id,
+      'Días trabajados': e.dias_trabajados || 0,
+      'Horas totales': e.horas_totales || 0,
+      'Horas extra': e.horas_extra || 0,
+      'Entradas': e.entradas || 0,
+      'Salidas': e.salidas || 0,
+      'Retardos': e.fuera_horario || 0,
+      'Fuera de ubicación': e.fuera_ubicacion || 0,
+      'Excepciones': e.excepciones || 0,
+      'Incidencias totales': (e.fuera_horario || 0) + (e.fuera_ubicacion || 0)
+    }));
+
+    if (filasResumen.length > 0) {
+      const tot = {
+        'ID Empleado': 'TOTAL',
+        'Nombre': `${filasResumen.length} empleados`,
+        'Departamento': '',
+        'Sucursal': '',
+        'Turno': '',
+        'Días trabajados': filasResumen.reduce((a, r) => a + r['Días trabajados'], 0),
+        'Horas totales': Math.round(filasResumen.reduce((a, r) => a + r['Horas totales'], 0) * 10) / 10,
+        'Horas extra': Math.round(filasResumen.reduce((a, r) => a + r['Horas extra'], 0) * 10) / 10,
+        'Entradas': filasResumen.reduce((a, r) => a + r.Entradas, 0),
+        'Salidas': filasResumen.reduce((a, r) => a + r.Salidas, 0),
+        'Retardos': filasResumen.reduce((a, r) => a + r.Retardos, 0),
+        'Fuera de ubicación': filasResumen.reduce((a, r) => a + r['Fuera de ubicación'], 0),
+        'Excepciones': filasResumen.reduce((a, r) => a + r.Excepciones, 0),
+        'Incidencias totales': filasResumen.reduce((a, r) => a + r['Incidencias totales'], 0)
+      };
+      filasResumen.push(tot);
+    }
+
+    const wsResumen = XLSX.utils.json_to_sheet(filasResumen);
+    wsResumen['!cols'] = [
+      { wch: 12 }, { wch: 25 }, { wch: 18 }, { wch: 10 }, { wch: 10 },
+      { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+      { wch: 10 }, { wch: 18 }, { wch: 12 }, { wch: 18 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+    if (incluirRegistros && registrosDetallados.length > 0) {
+      const filasDetalle = registrosDetallados.map(r => ({
+        'Fecha': r.fecha,
+        'Hora': r.hora,
+        'Empleado ID': r.empleado_id,
+        'Nombre': r.nombre,
+        'Departamento': r.departamento,
+        'Sucursal': r.sucursal,
+        'Turno': r.turno,
+        'Tipo': r.tipo,
+        'Dentro de sucursal': r.dentro_sucursal,
+        'Fuera de horario': r.fuera_horario || '',
+        'Detalle horario': r.detalle_horario || '',
+        'Ubicación GPS': r.ubicacion_texto || ''
+      }));
+      filasDetalle.sort((a, b) => (a.Fecha + a['Empleado ID']).localeCompare(b.Fecha + b['Empleado ID']));
+      const wsDetalle = XLSX.utils.json_to_sheet(filasDetalle);
+      wsDetalle['!cols'] = [
+        { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 25 }, { wch: 18 },
+        { wch: 22 }, { wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 14 },
+        { wch: 35 }, { wch: 22 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsDetalle, 'Registros');
+    }
+
+    if (incluirExcepciones && excepciones.length > 0) {
+      const filasExc = excepciones.map(e => ({
+        'ID': e.id,
+        'Tipo': e.tipo,
+        'Empleado ID': e.empleado_id,
+        'Empleado': e.empleado_nombre,
+        'Sucursal': e.sucursal_id,
+        'Turno': e.turno_id,
+        'Fecha inicio': e.fecha_inicio,
+        'Fecha fin': e.fecha_fin,
+        'Hora inicio': e.hora_inicio || '',
+        'Hora fin': e.hora_fin || '',
+        'Motivo': e.motivo,
+        'Estado': e.estado,
+        'Aprobado por': e.aprobado_por || '',
+        'Fecha solicitud': e.fecha_solicitud || '',
+        'Fecha resolución': e.fecha_resolucion || '',
+        'Observaciones': e.observaciones || ''
+      }));
+      const wsExc = XLSX.utils.json_to_sheet(filasExc);
+      wsExc['!cols'] = [
+        { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 10 },
+        { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+        { wch: 30 }, { wch: 10 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 30 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsExc, 'Excepciones');
+    }
+
+    const infoEmpresa = [
+      { 'Campo': 'Empresa', 'Valor': currentEmpresa.nombre },
+      { 'Campo': 'ID Empresa', 'Valor': currentEmpresa.id },
+      { 'Campo': 'Administrador', 'Valor': currentEmpresa.admin },
+      { 'Campo': 'Periodo desde', 'Valor': desde },
+      { 'Campo': 'Periodo hasta', 'Valor': hasta },
+      { 'Campo': 'Generado', 'Valor': new Date().toLocaleString('es-MX') },
+      { 'Campo': 'Total empleados', 'Valor': empleadosFuente.length },
+      { 'Campo': 'Total incidencias', 'Valor': filasResumen.length > 0 ? filasResumen[filasResumen.length - 1]['Incidencias totales'] : 0 }
+    ];
+    const wsInfo = XLSX.utils.json_to_sheet(infoEmpresa);
+    wsInfo['!cols'] = [{ wch: 20 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, wsInfo, 'Info');
+
+    const nombreArchivo = `Reporte_General_${currentEmpresa.id}_${desde}_a_${hasta}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+    toast('✅ Reporte generado correctamente', 'success');
+  } catch (err) {
+    console.error(err);
+    toast('❌ Error al generar el reporte: ' + err.message, 'error');
+  } finally {
+    setLoading(btn, false, '📥 Descargar Reporte General');
+  }
+}
+
+async function descargarReporteEmpleados() {
+  const btn = document.getElementById('btnRepEmpleado');
+  const desde = document.getElementById('repEmpDesde').value;
+  const hasta = document.getElementById('repEmpHasta').value;
+
+  if (!desde || !hasta) { toast('Selecciona el rango de fechas', 'error'); return; }
+  if (desde > hasta) { toast('La fecha inicial no puede ser mayor a la final', 'error'); return; }
+
+  const checks = document.querySelectorAll('.rep-emp-check:checked');
+  if (checks.length === 0) { toast('Selecciona al menos un empleado', 'error'); return; }
+
+  const seleccionados = Array.from(checks).map(c => ({
+    id: c.value,
+    nombre: c.dataset.nombre
+  }));
+
+  setLoading(btn, true);
+
+  try {
+    const promesasReg = seleccionados.map(emp =>
+      fetch(`${API_URL}?accion=consultar&empleado_id=${encodeURIComponent(emp.id)}&desde=${desde}&hasta=${hasta}&token=${currentToken}`)
+        .then(r => r.json())
+        .then(d => ({ emp, registros: (d && d.registros) || [] }))
+        .catch(() => ({ emp, registros: [] }))
+    );
+
+    const promesasExc = seleccionados.map(emp =>
+      fetch(`${API_URL}?accion=excepciones&empleado_id=${encodeURIComponent(emp.id)}&token=${currentToken}`)
+        .then(r => r.json())
+        .then(d => ({ emp, excepciones: (d && d.excepciones) || [] }))
+        .catch(() => ({ emp, excepciones: [] }))
+    );
+
+    const [resRegistros, resExcepciones] = await Promise.all([
+      Promise.all(promesasReg),
+      Promise.all(promesasExc)
+    ]);
+
+    const excPorEmp = {};
+    resExcepciones.forEach(r => {
+      const filtradas = (r.excepciones || []).filter(e => {
+        const fi = e.fecha_inicio, ff = e.fecha_fin || e.fecha_inicio;
+        return !(ff < desde || fi > hasta);
+      });
+      excPorEmp[r.emp.id] = filtradas;
+    });
+
+    const wb = XLSX.utils.book_new();
+
+    const filasResumen = resRegistros.map(({ emp, registros }) => {
+      const stats = calcularStatsEmpleado(registros, emp.id, desde, hasta);
+      return {
+        'ID': emp.id,
+        'Nombre': emp.nombre,
+        'Días trabajados': stats.diasTrabajados,
+        'Horas trabajadas': stats.horas,
+        'Horas extra': stats.horasExtra,
+        'Entradas': stats.entradas,
+        'Salidas': stats.salidas,
+        'Retardos': stats.retardos,
+        'Fuera de ubicación': stats.fueraUbicacion,
+        'Cumplimiento %': stats.cumplimiento
+      };
+    });
+    if (filasResumen.length > 0) {
+      filasResumen.push({
+        'ID': 'TOTAL',
+        'Nombre': `${filasResumen.length} empleado(s)`,
+        'Días trabajados': filasResumen.reduce((a, r) => a + r['Días trabajados'], 0),
+        'Horas trabajadas': '',
+        'Horas extra': '',
+        'Entradas': filasResumen.reduce((a, r) => a + r.Entradas, 0),
+        'Salidas': filasResumen.reduce((a, r) => a + r.Salidas, 0),
+        'Retardos': filasResumen.reduce((a, r) => a + r.Retardos, 0),
+        'Fuera de ubicación': filasResumen.reduce((a, r) => a + r['Fuera de ubicación'], 0),
+        'Cumplimiento %': ''
+      });
+    }
+    const wsResumen = XLSX.utils.json_to_sheet(filasResumen);
+    wsResumen['!cols'] = [
+      { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 12 },
+      { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 18 }, { wch: 14 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+    resRegistros.forEach(({ emp, registros }) => {
+      const nombreHoja = sanitizarNombreHoja(`${emp.id}`);
+      const filas = registros.map(r => ({
+        'Fecha': r.fecha,
+        'Hora': r.hora,
+        'Tipo': r.tipo,
+        'Sucursal': r.sucursal,
+        'Turno': r.turno,
+        'Dentro de sucursal': r.dentro_sucursal,
+        'Fuera de horario': r.fuera_horario || '',
+        'Detalle horario': r.detalle_horario || '',
+        'Ubicación GPS': r.ubicacion_texto || ''
+      })).sort((a, b) => (a.Fecha + a.Hora).localeCompare(b.Fecha + b.Hora));
+
+      const header = [
+        [`Empleado: ${emp.nombre}`],
+        [`ID: ${emp.id}`],
+        [`Periodo: ${desde} a ${hasta}`],
+        []
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(header);
+      XLSX.utils.sheet_add_json(ws, filas, { origin: -1 });
+
+      const stats = calcularStatsEmpleado(registros, emp.id, desde, hasta);
+      const resumenFinal = [
+        [],
+        ['RESUMEN DEL PERIODO'],
+        ['Días trabajados', stats.diasTrabajados],
+        ['Horas trabajadas', stats.horas],
+        ['Horas extra', stats.horasExtra],
+        ['Entradas', stats.entradas],
+        ['Salidas', stats.salidas],
+        ['Retardos', stats.retardos],
+        ['Fuera de ubicación', stats.fueraUbicacion],
+        ['Cumplimiento %', stats.cumplimiento + '%']
+      ];
+      XLSX.utils.sheet_add_aoa(ws, resumenFinal, { origin: -1 });
+
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 22 }, { wch: 14 },
+        { wch: 16 }, { wch: 14 }, { wch: 35 }, { wch: 22 }
+      ];
+
+      let nombreFinal = nombreHoja;
+      let contador = 1;
+      while (wb.SheetNames.includes(nombreFinal)) {
+        nombreFinal = `${nombreHoja}_${contador++}`;
+      }
+      XLSX.utils.book_append_sheet(wb, ws, nombreFinal);
+    });
+
+    const todasExcepciones = [];
+    Object.entries(excPorEmp).forEach(([empId, exs]) => {
+      exs.forEach(e => todasExcepciones.push({ empId, ...e }));
+    });
+    if (todasExcepciones.length > 0) {
+      const filasExc = todasExcepciones.map(e => ({
+        'Empleado ID': e.empleado_id,
+        'Empleado': e.empleado_nombre,
+        'Tipo': e.tipo,
+        'Fecha inicio': e.fecha_inicio,
+        'Fecha fin': e.fecha_fin,
+        'Hora inicio': e.hora_inicio || '',
+        'Hora fin': e.hora_fin || '',
+        'Motivo': e.motivo,
+        'Estado': e.estado,
+        'Aprobado por': e.aprobado_por || '',
+        'Observaciones': e.observaciones || ''
+      }));
+      const wsExc = XLSX.utils.json_to_sheet(filasExc);
+      wsExc['!cols'] = [
+        { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+        { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 22 }, { wch: 30 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsExc, 'Excepciones');
+    }
+
+    const info = [
+      { 'Campo': 'Empresa', 'Valor': currentEmpresa.nombre },
+      { 'Campo': 'ID Empresa', 'Valor': currentEmpresa.id },
+      { 'Campo': 'Administrador', 'Valor': currentEmpresa.admin },
+      { 'Campo': 'Periodo desde', 'Valor': desde },
+      { 'Campo': 'Periodo hasta', 'Valor': hasta },
+      { 'Campo': 'Empleados incluidos', 'Valor': seleccionados.length },
+      { 'Campo': 'Generado', 'Valor': new Date().toLocaleString('es-MX') }
+    ];
+    const wsInfo = XLSX.utils.json_to_sheet(info);
+    wsInfo['!cols'] = [{ wch: 20 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, wsInfo, 'Info');
+
+    const sufijo = seleccionados.length === 1 ? `_${seleccionados[0].id}` : `_${seleccionados.length}emps`;
+    const nombreArchivo = `Reporte_Empleados_${currentEmpresa.id}${sufijo}_${desde}_a_${hasta}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+    toast('✅ Reporte generado correctamente', 'success');
+  } catch (err) {
+    console.error(err);
+    toast('❌ Error al generar el reporte: ' + err.message, 'error');
+  } finally {
+    setLoading(btn, false, '📥 Descargar Reporte por Empleado');
+  }
+}
+
+function calcularStatsEmpleado(registros, empId, desde, hasta) {
+  const entradas = registros.filter(r => r.tipo === 'entrada');
+  const salidas = registros.filter(r => r.tipo === 'salida');
+  const retardos = entradas.filter(r => {
+    const v = r.fuera_horario;
+    return v === true || v === 'SI' || v === 'si' || v === 1;
+  });
+  const fueraUbicacion = registros.filter(r => {
+    const v = r.dentro_sucursal;
+    return v === false || v === 'NO' || (typeof v === 'string' && v.toUpperCase().startsWith('NO'));
+  });
+  const diasSet = new Set(entradas.map(r => r.fecha));
+
+  const porDia = {};
+  registros.forEach(r => {
+    if (!porDia[r.fecha]) porDia[r.fecha] = [];
+    porDia[r.fecha].push(r);
+  });
+  let totalMin = 0;
+  Object.values(porDia).forEach(regs => {
+    regs.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+    let pendiente = null;
+    regs.forEach(r => {
+      if (r.tipo === 'entrada') pendiente = r.hora;
+      else if (r.tipo === 'salida' && pendiente) {
+        const en = timeToMinClient(pendiente);
+        const sa = timeToMinClient(r.hora);
+        let diff = sa - en;
+        if (diff < 0) diff += 1440;
+        if (diff > 0 && diff < 16 * 60) totalMin += diff;
+        pendiente = null;
+      }
+    });
+  });
+
+  const horas = Math.floor(totalMin / 60);
+  const minutos = totalMin % 60;
+
+  let extraMin = 0;
+  Object.values(porDia).forEach(regs => {
+    regs.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+    let pendiente = null, minutosDia = 0;
+    regs.forEach(r => {
+      if (r.tipo === 'entrada') pendiente = r.hora;
+      else if (r.tipo === 'salida' && pendiente) {
+        const en = timeToMinClient(pendiente);
+        const sa = timeToMinClient(r.hora);
+        let diff = sa - en;
+        if (diff < 0) diff += 1440;
+        if (diff > 0 && diff < 16 * 60) minutosDia += diff;
+        pendiente = null;
+      }
+    });
+    if (minutosDia > 8 * 60) extraMin += minutosDia - 8 * 60;
+  });
+
+  let diasLaborables = 0;
+  const dIni = new Date(desde + 'T00:00:00');
+  const dFin = new Date(hasta + 'T00:00:00');
+  for (let d = new Date(dIni); d <= dFin; d.setDate(d.getDate() + 1)) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) diasLaborables++;
+  }
+  const cumplimiento = diasLaborables > 0
+    ? Math.round((diasSet.size / diasLaborables) * 100)
+    : 0;
+
+  return {
+    diasTrabajados: diasSet.size,
+    horas: `${horas}h ${minutos}m`,
+    horasExtra: `${Math.floor(extraMin / 60)}h ${extraMin % 60}m`,
+    entradas: entradas.length,
+    salidas: salidas.length,
+    retardos: retardos.length,
+    fueraUbicacion: fueraUbicacion.length,
+    cumplimiento
+  };
+}
+
+function timeToMinClient(h) {
+  if (!h) return 0;
+  const p = String(h).split(':');
+  return parseInt(p[0]) * 60 + parseInt(p[1] || 0);
+}
+
+function sanitizarNombreHoja(nombre) {
+  return String(nombre).replace(/[:\\\/\?\*\[\]]/g, '_').substring(0, 31);
+}
+</script>
+</body>
+</html>

@@ -13,21 +13,21 @@
 :root { --primary:#1a237e; --primary-light:#3949ab; --bg:#f0f2f5; --card:#fff; --text:#212121; --text-light:#757575; --success:#388e3c; --warning:#f57c00; --danger:#d32f2f; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-/* ===================== LOGIN ===================== */
 .login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); }
 .login-card { background:white; padding:30px; border-radius:20px; width:100%; max-width:350px; box-shadow:0 10px 30px rgba(0,0,0,0.2); text-align:center; animation:fadeInUp 0.5s ease-out; }
 .login-card h1 { font-size:3rem; margin-bottom:10px; }
 .login-card h2 { color:var(--primary); margin-bottom:8px; font-size:1.3rem; }
 .login-card .empresa-nombre { color:var(--text-light); font-size:0.9rem; margin-bottom:20px; font-weight:600; }
-.login-input { width:100%; padding:15px; border:2px solid #e0e0e0; border-radius:12px; font-size:1.2rem; text-align:center; margin-bottom:20px; outline:none; text-transform:uppercase; letter-spacing:2px; transition:border-color 0.2s, opacity 0.2s; }
+.login-input { width:100%; padding:15px; border:2px solid #e0e0e0; border-radius:12px; font-size:1.2rem; text-align:center; margin-bottom:12px; outline:none; transition:border-color 0.2s, opacity 0.2s; font-family:inherit; }
+.login-input.numero { text-transform:uppercase; letter-spacing:2px; }
+.login-input.pin { letter-spacing:8px; font-size:1.4rem; }
 .login-input:focus { border-color:var(--primary); }
 .login-input.cargando { opacity:0.6; pointer-events:none; background:#f5f5f5; }
-.login-btn { width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; transition:transform 0.15s; }
+.login-btn { width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; margin-top:10px; transition:transform 0.15s; }
 .login-btn:disabled { opacity:0.9; cursor:wait; }
 .login-btn.cargando { animation:pulseRing 1.8s infinite; }
 .error-msg { color:#c62828; font-size:0.85rem; margin-top:10px; display:none; }
 
-/* ===================== APP ===================== */
 .app-container { display:none; padding-bottom:100px; animation:fadeIn 0.4s ease; }
 .header { background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:#fff; padding:20px; text-align:center; border-radius:0 0 25px 25px; position:relative; }
 .header h1 { font-size:1.2rem; margin-bottom:4px; }
@@ -112,7 +112,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .spinner { display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:#fff; animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
-/* ===================== ANIMACIONES DE CARGA ===================== */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }
@@ -136,33 +135,24 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 }
 
 .loading-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
+  display: none; position: fixed; inset: 0;
   background: rgba(26, 35, 126, 0.85);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: 99999;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 20px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 99999; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
   animation: fadeIn 0.3s ease;
 }
 .loading-overlay.show { display: flex; }
 .loading-overlay .big-spinner {
   width: 70px; height: 70px;
   border: 5px solid rgba(255, 255, 255, 0.25);
-  border-top-color: #fff;
-  border-radius: 50%;
+  border-top-color: #fff; border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
 .loading-overlay .loading-text {
   color: #fff; font-size: 1.05rem; font-weight: 600;
-  letter-spacing: 0.5px;
-  animation: pulseContador 1.5s ease infinite;
-  text-align: center;
-  padding: 0 20px;
+  letter-spacing: 0.5px; animation: pulseContador 1.5s ease infinite;
+  text-align: center; padding: 0 20px;
 }
 .loading-overlay .loading-sub { color: rgba(255, 255, 255, 0.75); font-size: 0.85rem; }
 
@@ -184,9 +174,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
   <div class="login-card">
     <h1>⏱️</h1>
     <h2>Control de Asistencia</h2>
-    <div class="empresa-nombre" id="empresaNombre">Cargando empresa...</div>
-    <p style="color:var(--text-light); margin-bottom:20px; font-size:0.9rem;">Ingresa tu número de empleado</p>
-    <input type="text" class="login-input" id="inputEmpleadoId" placeholder="Ej: 2525" autocomplete="off" onkeydown="if(event.key==='Enter') iniciarSesion()">
+    <p style="color:var(--text-light); margin-bottom:20px; font-size:0.9rem;">Ingresa tu número y PIN</p>
+    <input type="text" class="login-input numero" id="inputEmpleadoId" placeholder="Número de empleado" autocomplete="off" onkeydown="if(event.key==='Enter') document.getElementById('inputPin').focus()">
+    <input type="tel" class="login-input pin" id="inputPin" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off" onkeydown="if(event.key==='Enter') iniciarSesion()">
     <button class="login-btn" id="btnLogin" onclick="iniciarSesion()">
       <span id="btnText">Ingresar</span>
       <span class="spinner" id="btnSpinner" style="display:none;"></span>
@@ -194,7 +184,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
     <div class="loading-dots" id="loadingDots">
       <span></span><span></span><span></span>
     </div>
-    <div class="error-msg" id="errorMsg">Número de empleado no encontrado</div>
+    <div class="error-msg" id="errorMsg">Datos incorrectos</div>
   </div>
 </div>
 
@@ -312,9 +302,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec';
-const TOKEN_EMPRESA = 'F4lf1l.-S';
-const NOMBRE_EMPRESA = 'Empresa Prueba';
 
+let SESSION_TOKEN = localStorage.getItem('session_token') || null;
 let empleado = JSON.parse(localStorage.getItem('empleado_actual') || 'null');
 let estadoActual = localStorage.getItem('estado_actual') || 'fuera';
 let ubicacionActual = null;
@@ -355,9 +344,6 @@ function showToast(msg, tipo = 'info') {
 //  INIT
 // ================================================================
 function init() {
-  const empNombreEl = document.getElementById('empresaNombre');
-  if (empNombreEl) empNombreEl.textContent = NOMBRE_EMPRESA;
-
   const fechaGuardada = localStorage.getItem('contador_fecha');
   const hoyStr = fechaLocalISO();
   if (fechaGuardada !== hoyStr) {
@@ -372,7 +358,7 @@ function init() {
     minutosAcumuladosHoy = parseInt(localStorage.getItem('minutos_acumulados_hoy') || '0');
   }
 
-  if (empleado) {
+  if (empleado && SESSION_TOKEN) {
     mostrarApp();
     reconciliarEstadoConServidor();
   }
@@ -454,17 +440,21 @@ function actualizarContadorTiempoReal() {
 }
 
 // ================================================================
-//  LOGIN CON ANIMACIONES
+//  LOGIN CON PIN
 // ================================================================
 async function iniciarSesion() {
   const id = document.getElementById('inputEmpleadoId').value.trim().toUpperCase();
+  const pin = document.getElementById('inputPin').value.trim();
+
   if (!id) { document.getElementById('inputEmpleadoId').focus(); return; }
+  if (!pin) { document.getElementById('inputPin').focus(); return; }
 
   const btnText = document.getElementById('btnText');
   const btnSpinner = document.getElementById('btnSpinner');
   const btnLogin = document.getElementById('btnLogin');
   const errorMsg = document.getElementById('errorMsg');
   const input = document.getElementById('inputEmpleadoId');
+  const inputPin = document.getElementById('inputPin');
   const overlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
   const loadingDots = document.getElementById('loadingDots');
@@ -474,17 +464,14 @@ async function iniciarSesion() {
   btnLogin.disabled = true;
   btnLogin.classList.add('cargando');
   input.classList.add('cargando');
+  inputPin.classList.add('cargando');
   input.disabled = true;
+  inputPin.disabled = true;
   errorMsg.style.display = 'none';
   loadingDots.classList.add('show');
   overlay.classList.add('show');
 
-  const mensajes = [
-    'Validando credenciales...',
-    'Verificando número de empleado...',
-    'Cargando tu información...',
-    'Casi listo...'
-  ];
+  const mensajes = ['Validando credenciales...', 'Verificando PIN...', 'Cargando tu información...', 'Casi listo...'];
   let msgIdx = 0;
   loadingText.textContent = mensajes[0];
   const msgInterval = setInterval(() => {
@@ -494,17 +481,11 @@ async function iniciarSesion() {
 
   const timeoutId = setTimeout(() => {
     loadingText.textContent = 'El servidor tarda más de lo esperado...';
-    const sub = document.querySelector('.loading-overlay .loading-sub');
-    if (sub) sub.textContent = 'Verifica tu conexión a internet';
   }, 20000);
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ accion: 'login', id, token: TOKEN_EMPRESA }),
-      redirect: 'follow'
-    });
+    const url = `${API_URL}?accion=login_pin&id=${encodeURIComponent(id)}&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
     const texto = await response.text();
     let data;
     try { data = JSON.parse(texto); }
@@ -517,11 +498,11 @@ async function iniciarSesion() {
 
     if (data.status === 'ok') {
       loadingText.textContent = '¡Bienvenido ' + (data.empleado?.nombre?.split(' ')[0] || '') + '!';
-      const sub = document.querySelector('.loading-overlay .loading-sub');
-      if (sub) sub.textContent = 'Preparando tu panel...';
 
       empleado = data.empleado;
+      SESSION_TOKEN = data.session_token;
       localStorage.setItem('empleado_actual', JSON.stringify(empleado));
+      localStorage.setItem('session_token', SESSION_TOKEN);
 
       const fechaGuardada = localStorage.getItem('contador_fecha');
       if (fechaGuardada !== fechaLocalISO()) {
@@ -537,11 +518,15 @@ async function iniciarSesion() {
       mostrarApp();
       reconciliarEstadoConServidor();
     } else {
-      errorMsg.textContent = data.mensaje || 'Empleado no encontrado';
+      errorMsg.textContent = data.mensaje || 'Datos incorrectos';
       errorMsg.style.display = 'block';
-      input.value = '';
+      inputPin.value = '';
       input.style.animation = 'none';
-      setTimeout(() => { input.style.animation = 'shake 0.4s'; }, 10);
+      inputPin.style.animation = 'none';
+      setTimeout(() => {
+        input.style.animation = 'shake 0.4s';
+        inputPin.style.animation = 'shake 0.4s';
+      }, 10);
     }
   } catch (error) {
     console.error('Error login:', error);
@@ -556,12 +541,11 @@ async function iniciarSesion() {
     btnLogin.disabled = false;
     btnLogin.classList.remove('cargando');
     input.classList.remove('cargando');
+    inputPin.classList.remove('cargando');
     input.disabled = false;
+    inputPin.disabled = false;
     loadingDots.classList.remove('show');
     overlay.classList.remove('show');
-
-    const sub = document.querySelector('.loading-overlay .loading-sub');
-    if (sub) sub.textContent = 'Un momento por favor';
   }
 }
 
@@ -580,19 +564,29 @@ function mostrarApp() {
 function cerrarSesion() {
   if (confirm('¿Cerrar sesión?')) {
     detenerContador();
-    ['empleado_actual','estado_actual','hora_entrada_actual','minutos_acumulados_hoy','contador_fecha']
+    // Invalidar sesión en backend
+    if (SESSION_TOKEN) {
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'logout', session_token: SESSION_TOKEN }),
+        redirect: 'follow'
+      }).catch(() => {});
+    }
+    ['empleado_actual','estado_actual','hora_entrada_actual','minutos_acumulados_hoy','contador_fecha','session_token']
       .forEach(k => localStorage.removeItem(k));
     location.reload();
   }
 }
 
 // ================================================================
-//  RECONCILIAR ESTADO CON SERVIDOR
+//  RECONCILIAR ESTADO
 // ================================================================
 async function reconciliarEstadoConServidor() {
+  if (!SESSION_TOKEN) return;
   try {
     const hoy = fechaLocalISO();
-    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&token=${TOKEN_EMPRESA}`);
+    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&session_token=${SESSION_TOKEN}`);
     const data = await res.json();
     if (data.status === 'ok' && data.registros) {
       const regs = data.registros.sort((a,b) => (a.timestamp||'').localeCompare(b.timestamp||''));
@@ -655,10 +649,10 @@ function obtenerUbicacion() {
 }
 
 // ================================================================
-//  REGISTRAR (con bloqueo de doble entrada)
+//  REGISTRAR
 // ================================================================
 async function registrar(tipo) {
-  if (!empleado || !empleado.id) {
+  if (!empleado || !empleado.id || !SESSION_TOKEN) {
     showToast('❌ Sesión inválida. Vuelve a iniciar sesión.', 'error');
     return;
   }
@@ -668,10 +662,9 @@ async function registrar(tipo) {
     return;
   }
 
-  // 🔧 VALIDACIÓN PREVIA: consultar el estado real en el backend
   try {
     const hoy = fechaLocalISO();
-    const checkRes = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&token=${TOKEN_EMPRESA}`);
+    const checkRes = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&session_token=${SESSION_TOKEN}`);
     const checkData = await checkRes.json();
     const regsHoy = (checkData.registros || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
     const ultimo = regsHoy[regsHoy.length - 1];
@@ -704,7 +697,7 @@ async function registrar(tipo) {
 
   const ahora = new Date();
   const registro = {
-    token: TOKEN_EMPRESA,
+    session_token: SESSION_TOKEN,
     accion: 'registrar',
     empleado_id: String(empleado.id),
     numero_empleado: String(empleado.id),
@@ -734,28 +727,24 @@ async function registrar(tipo) {
       redirect: 'follow'
     });
 
-    console.log('📥 Status:', res.status);
     const textoRespuesta = await res.text();
-    console.log('📥 Respuesta cruda:', textoRespuesta);
+    console.log('📥 Respuesta:', textoRespuesta);
 
     let result;
     try { result = JSON.parse(textoRespuesta); }
     catch (parseErr) {
       console.error('❌ Respuesta no-JSON:', textoRespuesta.substring(0, 500));
-      showToast('❌ El servidor no devolvió JSON. Revisa el deployment.', 'error');
+      showToast('❌ Error del servidor', 'error');
       return;
     }
 
     if (result.status !== 'ok') {
       showToast('❌ ' + (result.mensaje || 'No se pudo registrar'), 'error');
-      // Si el backend rechaza (ej: entrada duplicada), sincronizamos estado
       if (result.mensaje && (result.mensaje.includes('entrada registrada') || result.mensaje.includes('entrada activa'))) {
         reconciliarEstadoConServidor();
       }
       return;
     }
-
-    console.log('✅ Registro guardado en backend:', result);
 
     try {
       const dentro = result.dentro_sucursal;
@@ -788,19 +777,14 @@ async function registrar(tipo) {
       showToast(tipo === 'entrada' ? '✅ Entrada registrada' : '🔴 Salida registrada', 'success');
       actualizarUI();
     } catch (uiError) {
-      console.error('⚠️ Error al actualizar UI (pero el registro SÍ se guardó):', uiError);
-      showToast('⚠️ Registro guardado. Recarga la página si ves datos desactualizados.', 'warn');
+      console.error('⚠️ Error al actualizar UI:', uiError);
     }
 
-    try {
-      await cargarMisEstadisticas();
-    } catch (statsError) {
-      console.warn('No se pudieron refrescar las estadísticas:', statsError);
-    }
+    try { await cargarMisEstadisticas(); } catch (e) {}
 
   } catch (error) {
     console.error('❌ Error de red:', error);
-    showToast('❌ Error de conexión al registrar. Verifica tu internet.', 'error');
+    showToast('❌ Error de conexión. Verifica tu internet.', 'error');
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -888,7 +872,7 @@ function calcularHorasPorDia(registros) {
 //  ESTADÍSTICAS
 // ================================================================
 async function cargarMisEstadisticas() {
-  if (!empleado) return;
+  if (!empleado || !SESSION_TOKEN) return;
   const hoy = new Date();
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
   const desde = fechaLocalISO(inicioMes);
@@ -901,7 +885,7 @@ async function cargarMisEstadisticas() {
   };
 
   try {
-    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${desde}&hasta=${hasta}&token=${TOKEN_EMPRESA}`);
+    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${desde}&hasta=${hasta}&session_token=${SESSION_TOKEN}`);
     const data = await res.json();
     misRegistros = data.registros || [];
 
@@ -939,7 +923,7 @@ async function cargarMisEstadisticas() {
     let permisosAprobados = [];
     let diasVacaciones = 0;
     try {
-      const excRes = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&token=${TOKEN_EMPRESA}`);
+      const excRes = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&session_token=${SESSION_TOKEN}`);
       const excData = await excRes.json();
       const excepciones = excData.excepciones || [];
       permisosAprobados = excepciones.filter(e => e.estado === 'APROBADO' && ['PERMISO','RETARDO','FALTA_JUST'].includes(e.tipo));
@@ -992,7 +976,6 @@ async function cargarMisEstadisticas() {
     }
   } catch (error) {
     console.error('❌ Error al cargar estadísticas:', error);
-    showToast('⚠️ No se pudieron cargar tus estadísticas', 'warn');
   }
 }
 
@@ -1032,7 +1015,7 @@ async function enviarSolicitud() {
   if (motivo.length < 10) { showToast('⚠️ El motivo debe tener al menos 10 caracteres', 'warn'); return; }
 
   const data = {
-    token: TOKEN_EMPRESA,
+    session_token: SESSION_TOKEN,
     accion: 'solicitar_justificacion',
     tipo,
     empleado_id: String(empleado.id),
@@ -1077,9 +1060,9 @@ async function enviarSolicitud() {
 }
 
 async function cargarMisSolicitudes() {
-  if (!empleado) return;
+  if (!empleado || !SESSION_TOKEN) return;
   try {
-    const res = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&token=${TOKEN_EMPRESA}`);
+    const res = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&session_token=${SESSION_TOKEN}`);
     const data = await res.json();
     if (data.status === 'ok') {
       misSolicitudes = data.excepciones || [];

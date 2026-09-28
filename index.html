@@ -13,6 +13,7 @@
 :root { --primary:#1a237e; --primary-light:#3949ab; --bg:#f0f2f5; --card:#fff; --text:#212121; --text-light:#757575; --success:#388e3c; --warning:#f57c00; --danger:#d32f2f; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
+/* ===================== LOGIN ===================== */
 .login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); }
 .login-card { background:white; padding:30px; border-radius:20px; width:100%; max-width:350px; box-shadow:0 10px 30px rgba(0,0,0,0.2); text-align:center; animation:fadeInUp 0.5s ease-out; }
 .login-card h1 { font-size:3rem; margin-bottom:10px; }
@@ -28,75 +29,22 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .login-btn.cargando { animation:pulseRing 1.8s infinite; }
 .error-msg { color:#c62828; font-size:0.85rem; margin-top:10px; display:none; }
 
+/* ===================== APP ===================== */
 .app-container { display:none; padding-bottom:100px; animation:fadeIn 0.4s ease; }
-.header {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: #fff;
-  padding: 15px 20px 25px;
-  text-align: center;
-  border-radius: 0 0 25px 25px;
-  position: relative;
-}
+.header { background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:#fff; padding:15px 20px 25px; text-align:center; border-radius:0 0 25px 25px; position:relative; }
 
-.header-top {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 10px;
-  min-height: 42px; /* reserva espacio para que el título no se mueva */
-}
+.header-top { display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px; min-height:42px; }
+.header-actions { display:flex; gap:8px; }
+.icon-btn { background:rgba(255,255,255,0.2); border:none; color:white; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
+.icon-btn:hover { background:rgba(255,255,255,0.35); }
+.icon-btn:active { transform:scale(0.95); }
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.icon-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.icon-btn:active {
-  transform: scale(0.95);
-}
-.header h1 { font-size:1.2rem; margin-bottom:4px; }
-.header .employee-name { font-size:1rem; font-weight:600; margin-bottom:4px; }
-.header .info-line { font-size:0.8rem; opacity:0.85; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:12px; display:inline-block; }
-.clock-display { font-size:2.6rem; font-weight:300; margin:8px 0 2px; font-variant-numeric:tabular-nums; }
+.header h1 { font-size:1.2rem; margin-bottom:6px; }
+.header .employee-name { font-size:1.05rem; font-weight:600; margin-bottom:6px; }
+.header .info-line { font-size:0.8rem; opacity:0.9; background:rgba(255,255,255,0.15); padding:5px 14px; border-radius:14px; display:inline-block; margin-bottom:6px; }
+.clock-display { font-size:2.6rem; font-weight:300; margin:10px 0 4px; font-variant-numeric:tabular-nums; }
 .date-display { font-size:0.85rem; opacity:0.9; }
-  .pin-btn {
-  position:absolute; top:15px; right:65px;
-  background:rgba(255,255,255,0.2); border:none; color:white;
-  width:42px; height:42px; border-radius:50%;
-  font-size:1.1rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:background 0.2s;
-}
-.pin-btn:hover { background:rgba(255,255,255,0.35); }
-.pin-btn:active { transform:scale(0.95); }
-.logout-btn { 
-  position:absolute; top:15px; right:15px; 
-  background:rgba(255,255,255,0.2); border:none; color:white; 
-  width:42px; height:42px; border-radius:50%; 
-  font-size:1.2rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:background 0.2s;
-}
-.logout-btn:hover { background:rgba(255,255,255,0.35); }
-.logout-btn:active { transform:scale(0.95); }
+
 .status-card { margin:-20px 15px 15px; background:var(--card); border-radius:16px; padding:18px; box-shadow:0 4px 15px rgba(0,0,0,0.1); position:relative; z-index:2; }
 .status-row { display:flex; justify-content:space-between; align-items:center; }
 .status-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:600; }
@@ -173,56 +121,20 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 @keyframes spin { to { transform:rotate(360deg); } }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes dotBounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-8px); opacity: 1; }
-}
-@keyframes pulseRing {
-  0% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0.5); }
-  70% { box-shadow: 0 0 0 15px rgba(26, 35, 126, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0); }
-}
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-8px); }
-  40% { transform: translateX(8px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
-}
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-8px); opacity: 1; } }
+@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0.5); } 70% { box-shadow: 0 0 0 15px rgba(26, 35, 126, 0); } 100% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
 
-.loading-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(26, 35, 126, 0.85);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  z-index: 99999; align-items: center; justify-content: center;
-  flex-direction: column; gap: 20px;
-  animation: fadeIn 0.3s ease;
-}
+.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(26, 35, 126, 0.85); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 99999; align-items: center; justify-content: center; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease; }
 .loading-overlay.show { display: flex; }
-.loading-overlay .big-spinner {
-  width: 70px; height: 70px;
-  border: 5px solid rgba(255, 255, 255, 0.25);
-  border-top-color: #fff; border-radius: 50%;
-  animation: spin 0.9s linear infinite;
-}
-.loading-overlay .loading-text {
-  color: #fff; font-size: 1.05rem; font-weight: 600;
-  letter-spacing: 0.5px; animation: pulseContador 1.5s ease infinite;
-  text-align: center; padding: 0 20px;
-}
+.loading-overlay .big-spinner { width: 70px; height: 70px; border: 5px solid rgba(255, 255, 255, 0.25); border-top-color: #fff; border-radius: 50%; animation: spin 0.9s linear infinite; }
+.loading-overlay .loading-text { color: #fff; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; animation: pulseContador 1.5s ease infinite; text-align: center; padding: 0 20px; }
 .loading-overlay .loading-sub { color: rgba(255, 255, 255, 0.75); font-size: 0.85rem; }
 
 .loading-dots { display: none; justify-content: center; gap: 6px; margin-top: 15px; }
 .loading-dots.show { display: flex; animation: fadeIn 0.3s ease; }
-.loading-dots span {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--primary);
-  animation: dotBounce 1.4s infinite ease-in-out both;
-}
+.loading-dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); animation: dotBounce 1.4s infinite ease-in-out both; }
 .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
 .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 .loading-dots span:nth-child(3) { animation-delay: 0s; }
@@ -255,29 +167,29 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 </div>
 
 <div class="app-container" id="appContainer">
-<div class="header">
-  <div class="header-top">
-    <div class="header-actions">
-      <button class="icon-btn" onclick="abrirModalCambiarPin()" aria-label="Cambiar PIN" title="Cambiar PIN">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-        </svg>
-      </button>
-      <button class="icon-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
-      </button>
+  <div class="header">
+    <div class="header-top">
+      <div class="header-actions">
+        <button class="icon-btn" onclick="abrirModalCambiarPin()" aria-label="Cambiar PIN" title="Cambiar PIN">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
     </div>
+    <h1>⏱️ Control de Asistencia</h1>
+    <div class="employee-name" id="employeeNameDisplay">Cargando...</div>
+    <div class="info-line" id="infoLine">Cargando...</div>
+    <p class="date-display" id="dateDisplay"></p>
+    <div class="clock-display" id="clockDisplay">--:--:--</div>
   </div>
-  <h1>⏱️ Control de Asistencia</h1>
-  <div class="employee-name" id="employeeNameDisplay">Cargando...</div>
-  <div class="info-line" id="infoLine">Cargando...</div>
-  <p class="date-display" id="dateDisplay"></p>
-  <div class="clock-display" id="clockDisplay">--:--:--</div>
-</div>
 
   <div class="status-card">
     <div class="status-row">
@@ -346,6 +258,25 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
   </div>
 </div>
 
+<!-- Modal Cambiar PIN -->
+<div class="modal-overlay" id="modalCambiarPin">
+  <div class="modal">
+    <h3>🔑 Cambiar PIN</h3>
+    <p style="color:#666; font-size:0.85rem; margin-bottom:15px;">Tu PIN es personal. No lo compartas con nadie.</p>
+    <label>PIN actual</label>
+    <input type="tel" id="pinActual" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <label>Nuevo PIN (4-6 dígitos)</label>
+    <input type="tel" id="pinNuevo" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <label>Confirmar nuevo PIN</label>
+    <input type="tel" id="pinConfirmar" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="cerrarModalCambiarPin()">Cancelar</button>
+      <button class="modal-confirm" id="btnCambiarPin" onclick="guardarNuevoPin()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Solicitud -->
 <div class="modal-overlay" id="modalSolicitud">
   <div class="modal">
     <h3>📝 Nueva Solicitud</h3>
@@ -372,29 +303,26 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
     </div>
   </div>
 </div>
-<div class="modal-overlay" id="modalCambiarPin">
-  <div class="modal">
-    <h3>🔑 Cambiar PIN</h3>
-    <p style="color:#666; font-size:0.85rem; margin-bottom:15px;">
-      Tu PIN es personal. No lo compartas con nadie.
-    </p>
-    <label>PIN actual</label>
-    <input type="tel" id="pinActual" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-    <label>Nuevo PIN (4-6 dígitos)</label>
-    <input type="tel" id="pinNuevo" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-    <label>Confirmar nuevo PIN</label>
-    <input type="tel" id="pinConfirmar" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-    <div class="modal-buttons">
-      <button class="modal-cancel" onclick="cerrarModalCambiarPin()">Cancelar</button>
-      <button class="modal-confirm" id="btnCambiarPin" onclick="guardarNuevoPin()">Guardar</button>
-    </div>
-  </div>
-</div>
+
 <div class="toast" id="toast"></div>
 
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec';
+<!-- SDK de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script>
+// ================================================================
+//  CONFIGURACIÓN SUPABASE
+// ================================================================
+const SUPABASE_URL = 'https://zyfhtxefyfkmrnufuilj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bNmXL1jMPbZaSc6Pqx31EQ_V3_P6OlS';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Apps Script sigue en uso SOLO para solicitudes (excepciones) hasta migrar
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec';
+
+// ================================================================
+//  ESTADO GLOBAL
+// ================================================================
 let SESSION_TOKEN = localStorage.getItem('session_token') || null;
 let empleado = JSON.parse(localStorage.getItem('empleado_actual') || 'null');
 let estadoActual = localStorage.getItem('estado_actual') || 'fuera';
@@ -474,72 +402,7 @@ function verificarCambioDia() {
     cargarMisEstadisticas();
   }
 }
-function abrirModalCambiarPin() {
-  document.getElementById('pinActual').value = '';
-  document.getElementById('pinNuevo').value = '';
-  document.getElementById('pinConfirmar').value = '';
-  document.getElementById('modalCambiarPin').classList.add('show');
-}
 
-function cerrarModalCambiarPin() {
-  document.getElementById('modalCambiarPin').classList.remove('show');
-}
-
-async function guardarNuevoPin() {
-  const btn = document.getElementById('btnCambiarPin');
-  const pinActual = document.getElementById('pinActual').value.trim();
-  const pinNuevo = document.getElementById('pinNuevo').value.trim();
-  const pinConfirmar = document.getElementById('pinConfirmar').value.trim();
-  
-  // Validaciones
-  if (!pinActual || !pinNuevo || !pinConfirmar) {
-    showToast('⚠️ Completa todos los campos', 'warn'); return;
-  }
-  if (!/^\d{4,6}$/.test(pinNuevo)) {
-    showToast('⚠️ El nuevo PIN debe tener 4-6 dígitos numéricos', 'warn'); return;
-  }
-  if (pinNuevo !== pinConfirmar) {
-    showToast('⚠️ Los PINs nuevos no coinciden', 'warn'); return;
-  }
-  if (pinNuevo === pinActual) {
-    showToast('⚠️ El nuevo PIN debe ser diferente al actual', 'warn'); return;
-  }
-  
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
-  
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        session_token: SESSION_TOKEN,
-        accion: 'cambiar_pin',
-        pin_actual: pinActual,
-        pin_nuevo: pinNuevo
-      }),
-      redirect: 'follow'
-    });
-    const result = await res.json();
-    
-    if (result.status === 'ok') {
-      showToast('✅ PIN actualizado. Vuelve a iniciar sesión.', 'success');
-      cerrarModalCambiarPin();
-      setTimeout(() => {
-        localStorage.clear();
-        location.reload();
-      }, 2000);
-    } else {
-      showToast('❌ ' + (result.mensaje || 'No se pudo cambiar el PIN'), 'error');
-    }
-  } catch (e) {
-    console.error(e);
-    showToast('❌ Error de conexión', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Guardar';
-  }
-}
 function actualizarReloj() {
   const a = new Date();
   const elClock = document.getElementById('clockDisplay');
@@ -597,7 +460,7 @@ function actualizarContadorTiempoReal() {
 }
 
 // ================================================================
-//  LOGIN CON PIN
+//  LOGIN CON SUPABASE
 // ================================================================
 async function iniciarSesion() {
   const id = document.getElementById('inputEmpleadoId').value.trim().toUpperCase();
@@ -641,14 +504,15 @@ async function iniciarSesion() {
   }, 20000);
 
   try {
-    const url = `${API_URL}?accion=login_pin&id=${encodeURIComponent(id)}&pin=${encodeURIComponent(pin)}`;
-    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-    const texto = await response.text();
-    let data;
-    try { data = JSON.parse(texto); }
-    catch(e) {
-      console.error('Respuesta no-JSON:', texto);
-      errorMsg.textContent = 'Error del servidor. Contacta a RH.';
+    // 🔧 LLAMADA A SUPABASE
+    const { data, error } = await supabaseClient.rpc('login_empleado', {
+      p_numero_empleado: id,
+      p_pin: pin
+    });
+
+    if (error) {
+      console.error('Error Supabase:', error);
+      errorMsg.textContent = 'Error de conexión. Intenta de nuevo.';
       errorMsg.style.display = 'block';
       return;
     }
@@ -721,14 +585,11 @@ function mostrarApp() {
 function cerrarSesion() {
   if (confirm('¿Cerrar sesión?')) {
     detenerContador();
-    // Invalidar sesión en backend
+    // 🔧 Logout vía Supabase
     if (SESSION_TOKEN) {
-      fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'logout', session_token: SESSION_TOKEN }),
-        redirect: 'follow'
-      }).catch(() => {});
+      supabaseClient.rpc('cerrar_sesion', { p_session_token: SESSION_TOKEN })
+        .then(() => console.log('Sesión cerrada en backend'))
+        .catch(e => console.warn('No se pudo cerrar sesión en backend:', e));
     }
     ['empleado_actual','estado_actual','hora_entrada_actual','minutos_acumulados_hoy','contador_fecha','session_token']
       .forEach(k => localStorage.removeItem(k));
@@ -737,14 +598,19 @@ function cerrarSesion() {
 }
 
 // ================================================================
-//  RECONCILIAR ESTADO
+//  RECONCILIAR ESTADO CON SERVIDOR (Supabase)
 // ================================================================
 async function reconciliarEstadoConServidor() {
-  if (!SESSION_TOKEN) return;
+  if (!SESSION_TOKEN || !empleado) return;
   try {
     const hoy = fechaLocalISO();
-    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&session_token=${SESSION_TOKEN}`);
-    const data = await res.json();
+    const { data, error } = await supabaseClient.rpc('consultar_registros', {
+      p_session_token: SESSION_TOKEN,
+      p_desde: hoy,
+      p_hasta: hoy
+    });
+
+    if (error) { console.warn('Error al reconciliar:', error); return; }
     if (data.status === 'ok' && data.registros) {
       const regs = data.registros.sort((a,b) => (a.timestamp||'').localeCompare(b.timestamp||''));
       const ultimo = regs[regs.length - 1];
@@ -806,10 +672,10 @@ function obtenerUbicacion() {
 }
 
 // ================================================================
-//  REGISTRAR
+//  REGISTRAR (Supabase)
 // ================================================================
 async function registrar(tipo) {
-  if (!empleado || !empleado.id || !SESSION_TOKEN) {
+  if (!empleado || !SESSION_TOKEN) {
     showToast('❌ Sesión inválida. Vuelve a iniciar sesión.', 'error');
     return;
   }
@@ -817,32 +683,6 @@ async function registrar(tipo) {
     showToast('⚠️ Espera a que se obtenga la ubicación GPS', 'warn');
     obtenerUbicacion();
     return;
-  }
-
-  try {
-    const hoy = fechaLocalISO();
-    const checkRes = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&session_token=${SESSION_TOKEN}`);
-    const checkData = await checkRes.json();
-    const regsHoy = (checkData.registros || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
-    const ultimo = regsHoy[regsHoy.length - 1];
-    const estadoReal = ultimo && ultimo.tipo === 'entrada' ? 'dentro' : 'fuera';
-
-    if (estadoReal !== estadoActual) {
-      estadoActual = estadoReal;
-      localStorage.setItem('estado_actual', estadoActual);
-      actualizarUI();
-    }
-
-    if (tipo === 'entrada' && estadoReal === 'dentro') {
-      showToast('⚠️ Ya tienes una entrada registrada. Registra tu SALIDA primero.', 'warn');
-      return;
-    }
-    if (tipo === 'salida' && estadoReal === 'fuera') {
-      showToast('⚠️ No tienes una entrada activa para registrar salida.', 'warn');
-      return;
-    }
-  } catch (e) {
-    console.warn('No se pudo validar el estado previo:', e);
   }
 
   const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
@@ -853,58 +693,37 @@ async function registrar(tipo) {
   }
 
   const ahora = new Date();
-  const registro = {
-    session_token: SESSION_TOKEN,
-    accion: 'registrar',
-    empleado_id: String(empleado.id),
-    numero_empleado: String(empleado.id),
-    nombre: empleado.nombre || '',
-    departamento: empleado.departamento || '',
-    sucursal_id: empleado.sucursal_id || '',
-    sucursal_nombre: empleado.sucursal_nombre || '',
-    turno_id: empleado.turno_id || '',
-    turno_nombre: empleado.turno_nombre || '',
-    tipo: tipo,
-    fecha: fechaLocalISO(ahora),
-    hora: String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0') + ':' + String(ahora.getSeconds()).padStart(2,'0'),
-    timestamp: ahora.toISOString(),
-    latitud: ubicacionActual.lat,
-    longitud: ubicacionActual.lng,
-    ubicacion_texto: `${ubicacionActual.lat.toFixed(5)}, ${ubicacionActual.lng.toFixed(5)}`,
-    dispositivo: navigator.userAgent
-  };
-
-  console.log('📤 Enviando registro:', registro);
+  const horaLocal = String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0') + ':' + String(ahora.getSeconds()).padStart(2,'0');
 
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(registro),
-      redirect: 'follow'
+    // 🔧 LLAMADA A SUPABASE
+    const { data, error } = await supabaseClient.rpc('registrar_asistencia', {
+      p_session_token: SESSION_TOKEN,
+      p_tipo: tipo,
+      p_latitud: ubicacionActual.lat,
+      p_longitud: ubicacionActual.lng,
+      p_ubicacion_texto: `${ubicacionActual.lat.toFixed(5)}, ${ubicacionActual.lng.toFixed(5)}`,
+      p_dispositivo: navigator.userAgent,
+      p_hora_local: horaLocal,
+      p_fecha_local: fechaLocalISO(ahora)
     });
 
-    const textoRespuesta = await res.text();
-    console.log('📥 Respuesta:', textoRespuesta);
-
-    let result;
-    try { result = JSON.parse(textoRespuesta); }
-    catch (parseErr) {
-      console.error('❌ Respuesta no-JSON:', textoRespuesta.substring(0, 500));
-      showToast('❌ Error del servidor', 'error');
+    if (error) {
+      console.error('Error Supabase:', error);
+      showToast('❌ Error de conexión al registrar', 'error');
       return;
     }
 
-    if (result.status !== 'ok') {
-      showToast('❌ ' + (result.mensaje || 'No se pudo registrar'), 'error');
-      if (result.mensaje && (result.mensaje.includes('entrada registrada') || result.mensaje.includes('entrada activa'))) {
+    if (data.status !== 'ok') {
+      showToast('❌ ' + (data.mensaje || 'No se pudo registrar'), 'error');
+      if (data.mensaje && (data.mensaje.includes('entrada registrada') || data.mensaje.includes('entrada activa'))) {
         reconciliarEstadoConServidor();
       }
       return;
     }
 
     try {
-      const dentro = result.dentro_sucursal;
+      const dentro = data.dentro_sucursal;
       const fuera = dentro === false || dentro === 'NO' || (typeof dentro === 'string' && dentro.startsWith('NO'));
       if (fuera) {
         showToast('⚠️ Registro guardado, pero estás FUERA de la sucursal', 'warn');
@@ -915,7 +734,7 @@ async function registrar(tipo) {
         localStorage.setItem('estado_actual', estadoActual);
         iniciarContador();
         const elUltEntrada = document.getElementById('lastEntrada');
-        if (elUltEntrada) elUltEntrada.textContent = registro.hora;
+        if (elUltEntrada) elUltEntrada.textContent = horaLocal;
       } else {
         if (horaEntradaActual) {
           const minutosEstaSesion = Math.floor((Date.now() - horaEntradaActual) / 60000);
@@ -926,7 +745,7 @@ async function registrar(tipo) {
         estadoActual = 'fuera';
         localStorage.setItem('estado_actual', estadoActual);
         const elUltSalida = document.getElementById('lastSalida');
-        if (elUltSalida) elUltSalida.textContent = registro.hora;
+        if (elUltSalida) elUltSalida.textContent = horaLocal;
         const elTodayHours = document.getElementById('todayHours');
         if (elTodayHours) elTodayHours.classList.remove('contando');
       }
@@ -934,13 +753,13 @@ async function registrar(tipo) {
       showToast(tipo === 'entrada' ? '✅ Entrada registrada' : '🔴 Salida registrada', 'success');
       actualizarUI();
     } catch (uiError) {
-      console.error('⚠️ Error al actualizar UI:', uiError);
+      console.error('Error al actualizar UI:', uiError);
     }
 
     try { await cargarMisEstadisticas(); } catch (e) {}
 
   } catch (error) {
-    console.error('❌ Error de red:', error);
+    console.error('Error de red:', error);
     showToast('❌ Error de conexión. Verifica tu internet.', 'error');
   } finally {
     if (btn) {
@@ -1026,7 +845,7 @@ function calcularHorasPorDia(registros) {
 }
 
 // ================================================================
-//  ESTADÍSTICAS
+//  ESTADÍSTICAS (Supabase)
 // ================================================================
 async function cargarMisEstadisticas() {
   if (!empleado || !SESSION_TOKEN) return;
@@ -1042,8 +861,18 @@ async function cargarMisEstadisticas() {
   };
 
   try {
-    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${desde}&hasta=${hasta}&session_token=${SESSION_TOKEN}`);
-    const data = await res.json();
+    // 🔧 LLAMADA A SUPABASE
+    const { data, error } = await supabaseClient.rpc('consultar_registros', {
+      p_session_token: SESSION_TOKEN,
+      p_desde: desde,
+      p_hasta: hasta
+    });
+
+    if (error) {
+      console.error('Error consultar_registros:', error);
+      return;
+    }
+
     misRegistros = data.registros || [];
 
     const entradas = misRegistros.filter(r => r.tipo === 'entrada');
@@ -1077,10 +906,11 @@ async function cargarMisEstadisticas() {
       if (diff > 0 && diff < 16*60) minutosHoyConteo += diff;
     }
 
+    // Excepciones vía Apps Script (aún no migradas)
     let permisosAprobados = [];
     let diasVacaciones = 0;
     try {
-      const excRes = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&session_token=${SESSION_TOKEN}`);
+      const excRes = await fetch(`${APPS_SCRIPT_URL}?accion=excepciones&empleado_id=${empleado.id}&token=F4lf1l.-S`);
       const excData = await excRes.json();
       const excepciones = excData.excepciones || [];
       permisosAprobados = excepciones.filter(e => e.estado === 'APROBADO' && ['PERMISO','RETARDO','FALTA_JUST'].includes(e.tipo));
@@ -1132,12 +962,81 @@ async function cargarMisEstadisticas() {
       else bar.style.background = 'linear-gradient(90deg, #388e3c, #66bb6a)';
     }
   } catch (error) {
-    console.error('❌ Error al cargar estadísticas:', error);
+    console.error('Error al cargar estadísticas:', error);
   }
 }
 
 // ================================================================
-//  SOLICITUDES
+//  CAMBIAR PIN (Supabase)
+// ================================================================
+function abrirModalCambiarPin() {
+  document.getElementById('pinActual').value = '';
+  document.getElementById('pinNuevo').value = '';
+  document.getElementById('pinConfirmar').value = '';
+  document.getElementById('modalCambiarPin').classList.add('show');
+}
+
+function cerrarModalCambiarPin() {
+  document.getElementById('modalCambiarPin').classList.remove('show');
+}
+
+async function guardarNuevoPin() {
+  const btn = document.getElementById('btnCambiarPin');
+  const pinActual = document.getElementById('pinActual').value.trim();
+  const pinNuevo = document.getElementById('pinNuevo').value.trim();
+  const pinConfirmar = document.getElementById('pinConfirmar').value.trim();
+
+  if (!pinActual || !pinNuevo || !pinConfirmar) {
+    showToast('⚠️ Completa todos los campos', 'warn'); return;
+  }
+  if (!/^\d{4,6}$/.test(pinNuevo)) {
+    showToast('⚠️ El nuevo PIN debe tener 4-6 dígitos numéricos', 'warn'); return;
+  }
+  if (pinNuevo !== pinConfirmar) {
+    showToast('⚠️ Los PINs nuevos no coinciden', 'warn'); return;
+  }
+  if (pinNuevo === pinActual) {
+    showToast('⚠️ El nuevo PIN debe ser diferente al actual', 'warn'); return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
+
+  try {
+    // 🔧 LLAMADA A SUPABASE
+    const { data, error } = await supabaseClient.rpc('cambiar_pin', {
+      p_session_token: SESSION_TOKEN,
+      p_pin_actual: pinActual,
+      p_pin_nuevo: pinNuevo
+    });
+
+    if (error) {
+      console.error('Error cambiar_pin:', error);
+      showToast('❌ Error de conexión', 'error');
+      return;
+    }
+
+    if (data.status === 'ok') {
+      showToast('✅ PIN actualizado. Vuelve a iniciar sesión.', 'success');
+      cerrarModalCambiarPin();
+      setTimeout(() => {
+        localStorage.clear();
+        location.reload();
+      }, 2000);
+    } else {
+      showToast('❌ ' + (data.mensaje || 'No se pudo cambiar el PIN'), 'error');
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('❌ Error de conexión', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
+}
+
+// ================================================================
+//  SOLICITUDES (Apps Script — pendiente migrar a Supabase)
 // ================================================================
 function toggleHorario() {
   const tipo = document.getElementById('inputTipoSolicitud').value;
@@ -1172,7 +1071,7 @@ async function enviarSolicitud() {
   if (motivo.length < 10) { showToast('⚠️ El motivo debe tener al menos 10 caracteres', 'warn'); return; }
 
   const data = {
-    session_token: SESSION_TOKEN,
+    token: 'F4lf1l.-S',
     accion: 'solicitar_justificacion',
     tipo,
     empleado_id: String(empleado.id),
@@ -1189,7 +1088,7 @@ async function enviarSolicitud() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data),
@@ -1217,9 +1116,9 @@ async function enviarSolicitud() {
 }
 
 async function cargarMisSolicitudes() {
-  if (!empleado || !SESSION_TOKEN) return;
+  if (!empleado) return;
   try {
-    const res = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&session_token=${SESSION_TOKEN}`);
+    const res = await fetch(`${APPS_SCRIPT_URL}?accion=excepciones&empleado_id=${empleado.id}&token=F4lf1l.-S`);
     const data = await res.json();
     if (data.status === 'ok') {
       misSolicitudes = data.excepciones || [];

@@ -35,8 +35,26 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .header .info-line { font-size:0.8rem; opacity:0.85; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:12px; display:inline-block; }
 .clock-display { font-size:2.6rem; font-weight:300; margin:8px 0 2px; font-variant-numeric:tabular-nums; }
 .date-display { font-size:0.85rem; opacity:0.9; }
-.logout-btn { position:absolute; top:15px; right:15px; background:rgba(255,255,255,0.2); border:none; color:white; width:40px; height:40px; border-radius:50%; font-size:1.2rem; cursor:pointer; }
-
+  .pin-btn {
+  position:absolute; top:15px; right:65px;
+  background:rgba(255,255,255,0.2); border:none; color:white;
+  width:42px; height:42px; border-radius:50%;
+  font-size:1.1rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.2s;
+}
+.pin-btn:hover { background:rgba(255,255,255,0.35); }
+.pin-btn:active { transform:scale(0.95); }
+.logout-btn { 
+  position:absolute; top:15px; right:15px; 
+  background:rgba(255,255,255,0.2); border:none; color:white; 
+  width:42px; height:42px; border-radius:50%; 
+  font-size:1.2rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.2s;
+}
+.logout-btn:hover { background:rgba(255,255,255,0.35); }
+.logout-btn:active { transform:scale(0.95); }
 .status-card { margin:-20px 15px 15px; background:var(--card); border-radius:16px; padding:18px; box-shadow:0 4px 15px rgba(0,0,0,0.1); position:relative; z-index:2; }
 .status-row { display:flex; justify-content:space-between; align-items:center; }
 .status-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:600; }
@@ -195,8 +213,15 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 </div>
 
 <div class="app-container" id="appContainer">
-  <div class="header">
-    <button class="logout-btn" onclick="cerrarSesion()">⏻</button>
+<div class="header">
+  <button class="logout-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <polyline points="16 17 21 12 16 7"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12"></line>
+    </svg>
+  </button>
+  <button class="pin-btn" onclick="abrirModalCambiarPin()" aria-label="Cambiar PIN" title="Cambiar PIN">🔑</button>
     <h1>⏱️ Control de Asistencia</h1>
     <div class="employee-name" id="employeeNameDisplay">Cargando...</div>
     <div class="info-line" id="infoLine">Cargando...</div>
@@ -297,7 +322,24 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
     </div>
   </div>
 </div>
-
+<div class="modal-overlay" id="modalCambiarPin">
+  <div class="modal">
+    <h3>🔑 Cambiar PIN</h3>
+    <p style="color:#666; font-size:0.85rem; margin-bottom:15px;">
+      Tu PIN es personal. No lo compartas con nadie.
+    </p>
+    <label>PIN actual</label>
+    <input type="tel" id="pinActual" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <label>Nuevo PIN (4-6 dígitos)</label>
+    <input type="tel" id="pinNuevo" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <label>Confirmar nuevo PIN</label>
+    <input type="tel" id="pinConfirmar" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="cerrarModalCambiarPin()">Cancelar</button>
+      <button class="modal-confirm" id="btnCambiarPin" onclick="guardarNuevoPin()">Guardar</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -382,7 +424,72 @@ function verificarCambioDia() {
     cargarMisEstadisticas();
   }
 }
+function abrirModalCambiarPin() {
+  document.getElementById('pinActual').value = '';
+  document.getElementById('pinNuevo').value = '';
+  document.getElementById('pinConfirmar').value = '';
+  document.getElementById('modalCambiarPin').classList.add('show');
+}
 
+function cerrarModalCambiarPin() {
+  document.getElementById('modalCambiarPin').classList.remove('show');
+}
+
+async function guardarNuevoPin() {
+  const btn = document.getElementById('btnCambiarPin');
+  const pinActual = document.getElementById('pinActual').value.trim();
+  const pinNuevo = document.getElementById('pinNuevo').value.trim();
+  const pinConfirmar = document.getElementById('pinConfirmar').value.trim();
+  
+  // Validaciones
+  if (!pinActual || !pinNuevo || !pinConfirmar) {
+    showToast('⚠️ Completa todos los campos', 'warn'); return;
+  }
+  if (!/^\d{4,6}$/.test(pinNuevo)) {
+    showToast('⚠️ El nuevo PIN debe tener 4-6 dígitos numéricos', 'warn'); return;
+  }
+  if (pinNuevo !== pinConfirmar) {
+    showToast('⚠️ Los PINs nuevos no coinciden', 'warn'); return;
+  }
+  if (pinNuevo === pinActual) {
+    showToast('⚠️ El nuevo PIN debe ser diferente al actual', 'warn'); return;
+  }
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
+  
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        session_token: SESSION_TOKEN,
+        accion: 'cambiar_pin',
+        pin_actual: pinActual,
+        pin_nuevo: pinNuevo
+      }),
+      redirect: 'follow'
+    });
+    const result = await res.json();
+    
+    if (result.status === 'ok') {
+      showToast('✅ PIN actualizado. Vuelve a iniciar sesión.', 'success');
+      cerrarModalCambiarPin();
+      setTimeout(() => {
+        localStorage.clear();
+        location.reload();
+      }, 2000);
+    } else {
+      showToast('❌ ' + (result.mensaje || 'No se pudo cambiar el PIN'), 'error');
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('❌ Error de conexión', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
+}
 function actualizarReloj() {
   const a = new Date();
   const elClock = document.getElementById('clockDisplay');

@@ -29,7 +29,49 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .error-msg { color:#c62828; font-size:0.85rem; margin-top:10px; display:none; }
 
 .app-container { display:none; padding-bottom:100px; animation:fadeIn 0.4s ease; }
-.header { background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:#fff; padding:20px; text-align:center; border-radius:0 0 25px 25px; position:relative; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  padding: 15px 20px 25px;
+  text-align: center;
+  border-radius: 0 0 25px 25px;
+  position: relative;
+}
+
+.header-top {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 42px; /* reserva espacio para que el título no se mueva */
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
 .header h1 { font-size:1.2rem; margin-bottom:4px; }
 .header .employee-name { font-size:1rem; font-weight:600; margin-bottom:4px; }
 .header .info-line { font-size:0.8rem; opacity:0.85; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:12px; display:inline-block; }
@@ -214,20 +256,28 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 
 <div class="app-container" id="appContainer">
 <div class="header">
-  <button class="logout-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-      <polyline points="16 17 21 12 16 7"></polyline>
-      <line x1="21" y1="12" x2="9" y2="12"></line>
-    </svg>
-  </button>
-  <button class="pin-btn" onclick="abrirModalCambiarPin()" aria-label="Cambiar PIN" title="Cambiar PIN">🔑</button>
-    <h1>⏱️ Control de Asistencia</h1>
-    <div class="employee-name" id="employeeNameDisplay">Cargando...</div>
-    <div class="info-line" id="infoLine">Cargando...</div>
-    <p class="date-display" id="dateDisplay"></p>
-    <div class="clock-display" id="clockDisplay">--:--:--</div>
+  <div class="header-top">
+    <div class="header-actions">
+      <button class="icon-btn" onclick="abrirModalCambiarPin()" aria-label="Cambiar PIN" title="Cambiar PIN">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
   </div>
+  <h1>⏱️ Control de Asistencia</h1>
+  <div class="employee-name" id="employeeNameDisplay">Cargando...</div>
+  <div class="info-line" id="infoLine">Cargando...</div>
+  <p class="date-display" id="dateDisplay"></p>
+  <div class="clock-display" id="clockDisplay">--:--:--</div>
+</div>
 
   <div class="status-card">
     <div class="status-row">

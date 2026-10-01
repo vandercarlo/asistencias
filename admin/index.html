@@ -1,87 +1,210 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
-<title>Admin Dashboard - Control de Asistencia</title>
+<title>Admin Dashboard Pro - Control de Asistencia</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  :root { --primary: #1a237e; --primary-light: #3949ab; --bg: #f4f6f8; --card: #fff; --text: #333; --border: #e0e0e0; --danger: #d32f2f; --success: #388e3c; --warning: #f57c00; --info: #1976d2; }
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  :root { 
+    --primary: #1a237e; --primary-light: #3949ab; --primary-dark: #0d1642;
+    --bg: #f4f6f8; --card: #fff; --text: #333; --text-light: #666;
+    --border: #e0e0e0; --danger: #d32f2f; --success: #388e3c; 
+    --warning: #f57c00; --info: #1976d2; --purple: #7b1fa2;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.1);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,.15);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, sans-serif; }
   body { background: var(--bg); color: var(--text); }
 
-  #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-  .toast { background: #333; color: #fff; padding: 12px 18px; border-radius: 6px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,.2); animation: slideIn .3s ease; max-width: 320px; }
-  .toast.success { background: var(--success); } .toast.error { background: var(--danger); } .toast.info { background: var(--info); }
-  @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+  /* ============ TOASTS ============ */
+  #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: #333; color: #fff; padding: 12px 18px; border-radius: 8px; font-size: 14px; box-shadow: var(--shadow-lg); animation: slideIn .3s ease; max-width: 340px; display: flex; align-items: center; gap: 8px; }
+  .toast.success { background: var(--success); } .toast.error { background: var(--danger); } .toast.info { background: var(--info); } .toast.warning { background: var(--warning); }
+  @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-  .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .login-container { display: flex; height: 100vh; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a237e, #3949ab); }
-  .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
-  .login-box h2 { color: var(--primary); margin-bottom: 20px; }
-  .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; }
-  .login-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+  /* ============ LOGIN ============ */
+  .login-container { display: flex; height: 100vh; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a237e 0%, #3949ab 50%, #5c6bc0 100%); position: relative; overflow: hidden; }
+  .login-container::before { content: ''; position: absolute; width: 500px; height: 500px; background: rgba(255,255,255,.05); border-radius: 50%; top: -200px; right: -100px; }
+  .login-container::after { content: ''; position: absolute; width: 400px; height: 400px; background: rgba(255,255,255,.05); border-radius: 50%; bottom: -150px; left: -100px; }
+  .login-box { background: white; padding: 45px 40px; border-radius: 16px; box-shadow: var(--shadow-lg); width: 100%; max-width: 420px; text-align: center; position: relative; z-index: 1; }
+  .login-box .logo-icon { font-size: 50px; margin-bottom: 10px; }
+  .login-box h2 { color: var(--primary); margin-bottom: 8px; font-size: 24px; }
+  .login-box p { color: var(--text-light); font-size: 14px; margin-bottom: 25px; }
+  .login-box input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; transition: border .2s; }
+  .login-box input:focus { outline: none; border-color: var(--primary); }
+  .login-box button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: all .2s; }
+  .login-box button:hover:not(:disabled) { background: var(--primary-light); transform: translateY(-1px); box-shadow: var(--shadow-md); }
   .error { color: var(--danger); font-size: 14px; margin-top: 10px; display: none; }
 
-  .dashboard { display: none; }
-  .header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-  .header h1 { font-size: 20px; }
-  .user-info { font-size: 14px; opacity: 0.9; }
-  .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-  .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+  /* ============ LAYOUT ============ */
+  .dashboard { display: none; min-height: 100vh; }
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 250px; background: linear-gradient(180deg, var(--primary-dark), var(--primary)); color: white; padding: 20px 0; overflow-y: auto; z-index: 100; transition: transform .3s; }
+  .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 15px; }
+  .sidebar-header h2 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-header .sub { font-size: 12px; opacity: .7; margin-top: 5px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; color: rgba(255,255,255,.8); transition: all .2s; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,.08); color: white; }
+  .nav-item.active { background: rgba(255,255,255,.12); color: white; border-left-color: #ffd54f; }
+  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+  .nav-item .badge-nav { margin-left: auto; background: var(--danger); color: white; font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
 
-  .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid var(--border); flex-wrap: wrap; }
-  .tab { padding: 10px 20px; cursor: pointer; border: none; background: none; font-size: 15px; font-weight: 600; color: #666; }
-  .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px; }
+  .main-content { margin-left: 250px; min-height: 100vh; }
+  .header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 50; }
+  .header-left h1 { font-size: 20px; color: var(--text); }
+  .header-left .breadcrumb { font-size: 13px; color: var(--text-light); margin-top: 3px; }
+  .header-right { display: flex; align-items: center; gap: 15px; }
+  .user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 14px; background: var(--bg); border-radius: 20px; font-size: 13px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+  .logout-btn { background: rgba(211,47,47,.1); color: var(--danger); border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all .2s; }
+  .logout-btn:hover { background: var(--danger); color: white; }
 
-  .card { background: var(--card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-  .stat-card { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-  .stat-card h3 { font-size: 13px; color: #666; margin-bottom: 10px; text-transform: uppercase; }
-  .stat-card .number { font-size: 28px; font-weight: bold; color: var(--primary); }
-  .stat-card.danger { border-left-color: var(--danger); } .stat-card.danger .number { color: var(--danger); }
-  .stat-card.success { border-left-color: var(--success); } .stat-card.success .number { color: var(--success); }
-  .stat-card.warning { border-left-color: var(--warning); } .stat-card.warning .number { color: var(--warning); }
-  .stat-card.info { border-left-color: var(--info); } .stat-card.info .number { color: var(--info); }
+  .container { padding: 25px 30px; max-width: 1600px; }
 
+  /* ============ SECTION CONTENT ============ */
+  .section-content { display: none; animation: fadeIn .3s ease; }
+  .section-content.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ============ CARDS ============ */
+  .card { background: var(--card); padding: 22px; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+  .card h3 { font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; color: var(--primary); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+
+  /* ============ STATS ============ */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+  .stat-card { background: white; padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; transition: transform .2s; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
+  .stat-card.danger::before { background: var(--danger); } 
+  .stat-card.success::before { background: var(--success); } 
+  .stat-card.warning::before { background: var(--warning); } 
+  .stat-card.info::before { background: var(--info); }
+  .stat-card.purple::before { background: var(--purple); }
+  .stat-card h3 { font-size: 12px; color: var(--text-light); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .stat-card .number { font-size: 30px; font-weight: 700; color: var(--primary); line-height: 1; }
+  .stat-card.danger .number { color: var(--danger); }
+  .stat-card.success .number { color: var(--success); }
+  .stat-card.warning .number { color: var(--warning); }
+  .stat-card.info .number { color: var(--info); }
+  .stat-card.purple .number { color: var(--purple); }
+  .stat-card .trend { font-size: 12px; margin-top: 8px; display: flex; align-items: center; gap: 4px; color: var(--text-light); }
+  .stat-card .icon-bg { position: absolute; right: 15px; top: 15px; font-size: 32px; opacity: .08; }
+
+  /* ============ LIVE HEADER ============ */
+  .live-header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); color: white; padding: 20px 25px; border-radius: var(--radius); margin-bottom: 20px; box-shadow: var(--shadow-md); flex-wrap: wrap; gap: 15px; }
+  .live-clock { display: flex; flex-direction: column; }
+  .clock-time { font-size: 42px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; line-height: 1; font-family: 'Courier New', monospace; }
+  .clock-date { font-size: 14px; opacity: .85; margin-top: 6px; text-transform: capitalize; }
+  .live-status { display: flex; gap: 10px; flex-wrap: wrap; }
+  .status-pill { background: rgba(255,255,255,.15); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px); }
+  .status-pill.online { background: rgba(76,175,80,.25); }
+  .pulse-dot { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; animation: pulse 1.5s infinite; box-shadow: 0 0 0 0 rgba(76,175,80,.7); }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,.7); } 70% { box-shadow: 0 0 0 10px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
+
+  /* ============ CHARTS ============ */
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 20px; }
+  .chart-container { position: relative; height: 280px; }
+
+  /* ============ TABLES ============ */
   table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-  th { background: #f8f9fa; font-weight: 600; color: #555; font-size: 13px; }
-  tr:hover { background: #f8f9fa; }
+  th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+  th { background: #f8f9fa; font-weight: 600; color: var(--text-light); font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+  tr:hover { background: #fafbfc; }
+  tbody tr:last-child td { border-bottom: none; }
 
-  .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; }
+  /* ============ BADGES ============ */
+  .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
   .badge-pending { background: #fff3cd; color: #856404; }
   .badge-approved { background: #d4edda; color: #155724; }
   .badge-rejected { background: #f8d7da; color: #721c24; }
   .badge-info { background: #d1ecf1; color: #0c5460; }
   .badge-exception { background: #e2d9f3; color: #5e35b1; }
+  .badge-warning { background: #ffe0b2; color: #e65100; }
+  .badge-vacation { background: #c8e6c9; color: #2e7d32; }
+  .badge-absent { background: #ffcdd2; color: #b71c1c; }
 
-  .section-content { display: none; }
-  .section-content.active { display: block; }
+  /* Puntualidad / Ubicación */
+  .puntual { display: inline-flex; align-items: center; gap: 4px; color: var(--success); font-weight: 600; font-size: 12px; }
+  .retardo { display: inline-flex; align-items: center; gap: 4px; color: var(--warning); font-weight: 600; font-size: 12px; }
+  .tarde { display: inline-flex; align-items: center; gap: 4px; color: var(--danger); font-weight: 600; font-size: 12px; }
+  .ubic-ok { display: inline-flex; align-items: center; gap: 4px; color: var(--success); font-weight: 600; font-size: 12px; }
+  .ubic-fuera { display: inline-flex; align-items: center; gap: 4px; color: var(--danger); font-weight: 600; font-size: 12px; background: #ffebee; padding: 2px 8px; border-radius: 10px; }
+  .ubic-ok-badge { display: inline-flex; align-items: center; gap: 4px; color: var(--success); font-weight: 600; font-size: 12px; background: #e8f5e9; padding: 2px 8px; border-radius: 10px; }
+  .tiempo-planta { font-family: 'Courier New', monospace; font-weight: 700; color: var(--primary); font-size: 13px; }
+  .fila-fuera-ubicacion { background: #fff8f8 !important; }
+  .fila-fuera-ubicacion:hover { background: #ffebee !important; }
+  .fila-retardo { background: #fffdf7 !important; }
 
-  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; margin: 0 5px; }
+  /* ============ INCIDENCIA ITEM ============ */
+  .incidencia-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-bottom: 1px solid var(--border); transition: background .2s; }
+  .incidencia-item:hover { background: #fafbfc; }
+  .incidencia-item:last-child { border-bottom: none; }
+  .incidencia-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .incidencia-icon.retardo { background: #fff3e0; }
+  .incidencia-icon.ubicacion { background: #ffebee; }
+  .incidencia-icon.tarde { background: #ffcdd2; }
+  .incidencia-info { flex: 1; }
+  .incidencia-info .nombre { font-weight: 600; font-size: 14px; }
+  .incidencia-info .detalle { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+  .incidencia-info .hora { font-family: 'Courier New', monospace; font-weight: 700; color: var(--danger); }
+
+  /* ============ BUTTONS ============ */
+  .btn { padding: 9px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
   .btn:disabled { opacity: .6; cursor: not-allowed; }
   .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-light); }
   .btn-success { background: var(--success); color: white; }
   .btn-danger { background: var(--danger); color: white; }
+  .btn-warning { background: var(--warning); color: white; }
+  .btn-info { background: var(--info); color: white; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+  .btn-outline:hover:not(:disabled) { background: var(--primary); color: white; }
   .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost { background: #f0f0f0; color: var(--text); }
 
+  /* ============ FORMS ============ */
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+  .form-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; color: var(--text-light); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; transition: border .2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  /* ============ SEARCH ============ */
+  .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
+  .search-box input { flex: 1; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+
+  /* ============ FILTERS ============ */
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; align-items: center; }
+  .filter-bar label { font-size: 12px; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
+  .filter-bar select, .filter-bar input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+
+  /* ============ SEMANA ============ */
   .semana-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
   .semana-nav { display: flex; gap: 10px; align-items: center; }
   .dias-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 20px; }
-  .dia-card { background: white; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-  .dia-card .nombre { font-size: 12px; color: #666; margin-bottom: 5px; }
-  .dia-card .fecha { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+  .dia-card { background: white; border-radius: 8px; padding: 15px 10px; text-align: center; box-shadow: var(--shadow-sm); transition: transform .2s; }
+  .dia-card:hover { transform: translateY(-2px); }
+  .dia-card .nombre { font-size: 12px; color: var(--text-light); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; }
+  .dia-card .fecha { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
   .dia-card .stats { font-size: 12px; }
   .dia-card .stats div { margin: 3px 0; }
   .dia-card.hoy { border: 2px solid var(--primary); }
+  .dia-card.inhabil { background: #f5f5f5; opacity: .7; }
+  .dia-card.inhabil .fecha { color: #999; }
+  .dia-card .tag-inhabil { font-size: 10px; background: #ffcdd2; color: #b71c1c; padding: 2px 6px; border-radius: 8px; margin-top: 5px; display: inline-block; }
 
   .registro-table { width: 100%; overflow-x: auto; }
-  .registro-table table { min-width: 800px; }
+  .registro-table table { min-width: 900px; }
   .registro-table th { background: var(--primary); color: white; }
   .registro-table td { padding: 8px; text-align: center; }
   .registro-table .entrada { color: var(--success); font-weight: bold; }
@@ -89,348 +212,618 @@
   .registro-table .ausente { color: #999; font-style: italic; }
   .registro-table .excepcion { color: #5e35b1; font-weight: bold; font-size: 11px; }
 
-  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 600; }
-  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; }
-  .form-group textarea { resize: vertical; min-height: 60px; }
-
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-  .modal-overlay.show { display: flex; }
-  .modal { background: white; border-radius: 12px; padding: 30px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
-  .modal h3 { margin-bottom: 20px; color: var(--primary); }
-  .modal-buttons { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
-
-  .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
-  .search-box input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
-
-  .empty-state { text-align: center; padding: 30px 15px; color: #888; }
-  .empty-state .icon { font-size: 40px; margin-bottom: 10px; opacity: .5; }
-
-  .legend { display: flex; gap: 15px; flex-wrap: wrap; font-size: 12px; color: #666; margin: 10px 0; }
+  .legend { display: flex; gap: 15px; flex-wrap: wrap; font-size: 12px; color: var(--text-light); margin: 10px 0; }
   .legend span::before { content: '●'; margin-right: 5px; font-size: 14px; }
   .legend .l-entrada::before { color: var(--success); }
   .legend .l-salida::before { color: var(--danger); }
   .legend .l-excepcion::before { color: #5e35b1; }
   .legend .l-ausente::before { color: #bbb; }
+  .legend .l-inhabil::before { color: #b71c1c; }
 
-    /* 🔧 Fix lista de empleados en reportes */
-  #repEmpLista {
-    display: block;
-    width: 100%;
-  }
-  #repEmpLista label {
-    display: flex !important;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    text-align: left;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  #repEmpLista label:hover {
-    background: #f0f2f5;
-  }
-  #repEmpLista label input[type="checkbox"] {
-    margin: 0;
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-  #repEmpLista label span {
-    flex: 1;
-    text-align: left;
-    line-height: 1.3;
-  }
+  /* ============ MODAL ============ */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(2px); }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 12px; padding: 30px; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+  .modal.modal-lg { max-width: 900px; }
+  .modal h3 { margin-bottom: 20px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .modal-buttons { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
 
+  /* ============ EMPTY STATE ============ */
+  .empty-state { text-align: center; padding: 40px 15px; color: #888; }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+
+  /* ============ DIAS INHABILES ============ */
+  .calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 15px; }
+  .calendario .dia-cal { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; background: white; border: 1px solid var(--border); font-size: 14px; cursor: pointer; transition: all .2s; }
+  .calendario .dia-cal:hover { border-color: var(--primary); transform: scale(1.05); }
+  .calendario .dia-cal.inhabil { background: #ffebee; border-color: #ffcdd2; color: var(--danger); font-weight: bold; }
+  .calendario .dia-cal.hoy { border: 2px solid var(--primary); }
+  .calendario .dia-cal.vacio { background: transparent; border: none; cursor: default; }
+  .calendario .dia-cal .num { font-size: 16px; font-weight: 600; }
+  .calendario .dia-cal .label { font-size: 9px; margin-top: 2px; text-align: center; padding: 0 2px; }
+  .calendario-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
+  .calendario-header div { text-align: center; font-size: 12px; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
+
+  /* ============ EMPLEADO PROFILE ============ */
+  .profile-header { display: flex; align-items: center; gap: 20px; padding: 20px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: var(--radius); color: white; margin-bottom: 20px; }
+  .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
+  .profile-info h2 { font-size: 22px; margin-bottom: 5px; }
+  .profile-info .meta { font-size: 13px; opacity: .9; }
+  .profile-info .meta span { margin-right: 15px; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1024px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; }
+    .mobile-toggle { display: flex !important; }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
   @media (max-width: 768px) {
-    .dias-grid { grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .dia-card { padding: 8px; } .dia-card .fecha { font-size: 14px; }
-    .form-grid { grid-template-columns: 1fr; }
-    .tabs { overflow-x: auto; }
+    .dias-grid { grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .dia-card { padding: 8px 4px; } .dia-card .fecha { font-size: 14px; }
+    .dia-card .nombre { font-size: 10px; }
+    .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .container { padding: 15px; }
+    .profile-header { flex-direction: column; text-align: center; }
+    .clock-time { font-size: 32px; }
+    .live-header { padding: 15px; }
   }
+  .mobile-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary); }
 </style>
 </head>
 <body>
 
 <div id="toastContainer"></div>
 
+<!-- ============ LOGIN ============ -->
 <div id="loginScreen" class="login-container">
   <div class="login-box">
-    <h2>🔐 Acceso Administrativo</h2>
-    <p style="color:#666; margin-bottom:20px;">Ingresa el Token de tu Empresa</p>
+    <div class="logo-icon">⏱️</div>
+    <h2>Control de Asistencia</h2>
+    <p>Panel Administrativo Profesional</p>
     <input type="password" id="adminToken" placeholder="Token de Empresa" autocomplete="off">
     <button id="loginBtn" onclick="loginAdmin()">Ingresar al Sistema</button>
     <div id="loginError" class="error">Token inválido o empresa no encontrada.</div>
   </div>
 </div>
 
+<!-- ============ DASHBOARD ============ -->
 <div id="dashboard" class="dashboard">
-  <div class="header">
-    <div>
-      <h1 id="empresaTitle">Panel de Administración</h1>
-      <div class="user-info" id="empresaSubTitle">Cargando...</div>
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>⏱️ AsistenciaPro</h2>
+      <div class="sub" id="sidebarEmpresa">Cargando...</div>
     </div>
-    <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
-  </div>
-
-  <div class="container">
-    <div class="tabs">
-      <button class="tab active" onclick="showTab('resumen', this)">📊 Resumen</button>
-      <button class="tab" onclick="showTab('hoy', this)">📅 Hoy / Semana</button>
-      <button class="tab" onclick="showTab('empleados', this)">👥 Empleados</button>
-      <button class="tab" onclick="showTab('agregar-excepcion', this)">➕ Agregar Excepción</button>
-      <button class="tab" onclick="showTab('solicitudes', this)">📝 Solicitudes <span id="pendingCount" class="badge badge-pending" style="display:none">0</span></button>
-      <button class="tab" onclick="showTab('reportes', this)">📥 Reportes</button>
-      <button class="tab" onclick="showTab('auditoria', this)">🔍 Auditoría</button>
-    </div>
-
-    <div id="resumen" class="section-content active">
-      <div class="stats-grid">
-        <div class="stat-card"><h3>Total Empleados</h3><div class="number" id="statEmpleados">-</div></div>
-        <div class="stat-card info"><h3>Registros Hoy</h3><div class="number" id="statRegistros">-</div></div>
-        <div class="stat-card danger"><h3>Incidencias</h3><div class="number" id="statIncidencias">-</div></div>
-        <div class="stat-card warning"><h3>Solicitudes Pendientes</h3><div class="number" id="statPendientes">-</div></div>
+    <nav>
+      <div class="nav-item active" onclick="showTab('resumen', this)">
+        <span class="icon">📊</span> Dashboard
       </div>
-      <div class="card">
-        <h3>Actividad Reciente</h3>
-        <table id="tablaReciente">
-          <thead><tr><th>Hora</th><th>Empleado</th><th>Tipo</th><th>Sucursal</th></tr></thead>
-          <tbody><tr><td colspan="4" class="empty-state">Cargando...</td></tr></tbody>
-        </table>
+      <div class="nav-item" onclick="showTab('hoy', this)">
+        <span class="icon">📅</span> Semana Actual
       </div>
-    </div>
+      <div class="nav-item" onclick="showTab('empleados', this)">
+        <span class="icon">👥</span> Empleados
+      </div>
+      <div class="nav-item" onclick="showTab('analisis', this)">
+        <span class="icon">📈</span> Análisis y Tendencias
+      </div>
+      <div class="nav-item" onclick="showTab('inhabilies', this)">
+        <span class="icon">🚫</span> Días Inhábiles
+      </div>
+      <div class="nav-item" onclick="showTab('agregar-excepcion', this)">
+        <span class="icon">➕</span> Agregar Excepción
+      </div>
+      <div class="nav-item" onclick="showTab('solicitudes', this)">
+        <span class="icon">📝</span> Solicitudes
+        <span class="badge-nav" id="pendingCount" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showTab('reportes', this)">
+        <span class="icon">📥</span> Reportes
+      </div>
+      <div class="nav-item" onclick="showTab('auditoria', this)">
+        <span class="icon">🔍</span> Auditoría
+      </div>
+    </nav>
+  </aside>
 
-    <div id="hoy" class="section-content">
-      <div class="card">
-        <div class="semana-header">
-          <h3>📅 Registro Semanal de Asistencia</h3>
-          <div class="semana-nav">
-            <button class="btn btn-primary" onclick="cambiarSemana(-1)">◀ Anterior</button>
-            <span id="semanaActual" style="font-weight:600; margin:0 10px;"></span>
-            <button class="btn btn-primary" onclick="cambiarSemana(1)">Siguiente ▶</button>
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="breadcrumb" id="pageBreadcrumb">Vista general del sistema</div>
+      </div>
+      <div class="header-right">
+        <div class="user-chip">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <span id="userName">Admin</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <div class="container">
+
+      <!-- ============ DASHBOARD EN VIVO ============ -->
+      <div id="resumen" class="section-content active">
+        
+        <div class="live-header">
+          <div class="live-clock">
+            <div class="clock-time" id="liveClock">--:--:--</div>
+            <div class="clock-date" id="liveDate">Cargando...</div>
+          </div>
+          <div class="live-status">
+            <div class="status-pill online">
+              <span class="pulse-dot"></span>
+              Sistema en línea
+            </div>
+            <div class="status-pill">
+              <span id="liveTotalEmpleados">0</span> empleados activos
+            </div>
           </div>
         </div>
-        <div class="dias-grid" id="diasGrid"></div>
-        <div class="legend">
-          <span class="l-entrada">Entrada</span>
-          <span class="l-salida">Salida</span>
-          <span class="l-excepcion">Excepción</span>
-          <span class="l-ausente">Sin registro</span>
+
+        <div class="stats-grid">
+          <div class="stat-card success">
+            <span class="icon-bg">🟢</span>
+            <h3>En Planta Ahora</h3>
+            <div class="number" id="statEnPlanta">-</div>
+            <div class="trend">Entrada sin salida</div>
+          </div>
+          <div class="stat-card info">
+            <span class="icon-bg">✅</span>
+            <h3>Entradas Hoy</h3>
+            <div class="number" id="statEntradasHoy">-</div>
+            <div class="trend" id="trendEntradas">Registros del día</div>
+          </div>
+          <div class="stat-card warning">
+            <span class="icon-bg">⏰</span>
+            <h3>Retardos</h3>
+            <div class="number" id="statRetardosHoy">-</div>
+            <div class="trend">Después de hora límite</div>
+          </div>
+          <div class="stat-card danger">
+            <span class="icon-bg">📍</span>
+            <h3>Fuera de Ubicación</h3>
+            <div class="number" id="statFueraUbicacion">-</div>
+            <div class="trend">No autorizados</div>
+          </div>
+          <div class="stat-card purple">
+            <span class="icon-bg">📊</span>
+            <h3>Tasa Asistencia</h3>
+            <div class="number" id="statTasaHoy">-</div>
+            <div class="trend">Del total</div>
+          </div>
+          <div class="stat-card">
+            <span class="icon-bg">❌</span>
+            <h3>Sin Registro</h3>
+            <div class="number" id="statSinRegistro">-</div>
+            <div class="trend">Aún no marcan</div>
+          </div>
         </div>
-        <h4 style="margin:20px 0 10px;">📋 Detalles de Registros</h4>
-        <div class="registro-table">
-          <table id="tablaRegistrosSemana">
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🟢 Empleados en Planta Ahora <span class="badge badge-approved" id="countEnPlanta">0</span></h3>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="buscarEnPlanta" placeholder="🔍 Buscar..." 
+                     oninput="filtrarEnPlanta()" 
+                     style="padding:6px 12px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+              <button class="btn btn-primary btn-sm" onclick="cargarDashboardEnVivo()">🔄 Actualizar</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="tablaEnPlanta">
+              <thead>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Departamento</th>
+                  <th>Entrada</th>
+                  <th>Puntualidad</th>
+                  <th>Ubicación</th>
+                  <th>Sucursal</th>
+                  <th>Tiempo en Planta</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyEnPlanta">
+                <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📊 Distribución de Entradas por Hora (Hoy)</h3>
+            <button class="btn btn-ghost btn-sm" onclick="cargarDashboardEnVivo()">🔄 Actualizar</button>
+          </div>
+          <div class="chart-container"><canvas id="chartEntradasPorHora"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🕐 Últimos Movimientos</h3>
+            <button class="btn btn-ghost btn-sm" onclick="cargarRegistrosRecientes()">🔄 Actualizar</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="tablaReciente">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Empleado</th>
+                  <th>Tipo</th>
+                  <th>Puntualidad</th>
+                  <th>Ubicación</th>
+                  <th>Sucursal</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="6" class="empty-state">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>⚠️ Incidencias del Día</h3>
+            <span class="badge badge-warning" id="countIncidencias">0</span>
+          </div>
+          <div id="listaIncidencias" style="max-height:300px; overflow-y:auto;">
+            <div class="empty-state">Cargando...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============ SEMANA ============ -->
+      <div id="hoy" class="section-content">
+        <div class="card">
+          <div class="semana-header">
+            <h3>📅 Registro Semanal de Asistencia</h3>
+            <div class="semana-nav">
+              <button class="btn btn-primary" onclick="cambiarSemana(-1)">◀ Anterior</button>
+              <span id="semanaActual" style="font-weight:600; margin:0 10px;"></span>
+              <button class="btn btn-primary" onclick="cambiarSemana(1)">Siguiente ▶</button>
+              <button class="btn btn-outline" onclick="cambiarSemana(0, true)">Hoy</button>
+            </div>
+          </div>
+          <div class="dias-grid" id="diasGrid"></div>
+          <div class="legend">
+            <span class="l-entrada">Entrada</span>
+            <span class="l-salida">Salida</span>
+            <span class="l-excepcion">Excepción</span>
+            <span class="l-ausente">Sin registro</span>
+            <span class="l-inhabil">Día inhábil</span>
+          </div>
+          <h4 style="margin:20px 0 10px;">📋 Detalles de Registros</h4>
+          <div class="registro-table">
+            <table id="tablaRegistrosSemana">
+              <thead>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyRegistrosSemana">
+                <tr><td colspan="8" class="empty-state">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ EMPLEADOS ============ -->
+      <div id="empleados" class="section-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>👥 Catálogo de Empleados</h3>
+            <div>
+              <button class="btn btn-success" onclick="abrirModalEmpleado()">➕ Nuevo Empleado</button>
+              <button class="btn btn-primary" onclick="cargarEmpleados()">🔄 Actualizar</button>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <label>Buscar:</label>
+            <input type="text" id="buscarEmpleado" placeholder="Nombre, ID, email, departamento..." oninput="filtrarEmpleados()" style="flex:1; min-width:200px;">
+            <label>Departamento:</label>
+            <select id="filtroDepartamento" onchange="filtrarEmpleados()">
+              <option value="">Todos</option>
+            </select>
+            <label>Sucursal:</label>
+            <select id="filtroSucursal" onchange="filtrarEmpleados()">
+              <option value="">Todas</option>
+            </select>
+            <label>Turno:</label>
+            <select id="filtroTurno" onchange="filtrarEmpleados()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <table id="tablaEmpleados">
             <thead>
               <tr>
-                <th>Empleado</th>
-                <th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th>
+                <th>ID</th><th>Nombre</th><th>Departamento</th><th>Sucursal</th>
+                <th>Turno</th><th>Email</th><th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="tbodyRegistrosSemana">
-              <tr><td colspan="8" class="empty-state">Cargando...</td></tr>
-            </tbody>
+            <tbody><tr><td colspan="7" class="empty-state">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
-    </div>
 
-    <div id="empleados" class="section-content">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-          <h3>Catálogo de Empleados</h3>
-          <div>
-            <button class="btn btn-success" onclick="abrirModalEmpleado()">➕ Nuevo Empleado</button>
-            <button class="btn btn-primary" onclick="cargarEmpleados()">🔄 Actualizar</button>
+      <!-- ============ ANÁLISIS ============ -->
+      <div id="analisis" class="section-content">
+        <div class="card">
+          <h3>📈 Análisis y Tendencias</h3>
+          <div class="filter-bar">
+            <label>Período:</label>
+            <select id="analisisPeriodo" onchange="cargarAnalisis()">
+              <option value="7">Últimos 7 días</option>
+              <option value="30" selected>Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="180">Últimos 6 meses</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="cargarAnalisis()">🔄 Actualizar</button>
           </div>
         </div>
-        <div class="search-box">
-          <input type="text" id="buscarEmpleado" placeholder="Buscar por nombre, ID, email o departamento..." oninput="filtrarEmpleados()">
-        </div>
-        <table id="tablaEmpleados">
-          <thead><tr><th>ID</th><th>Nombre</th><th>Departamento</th><th>Sucursal</th><th>Turno</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr></thead>
-          <tbody><tr><td colspan="7" class="empty-state">Cargando...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
 
-    <div id="agregar-excepcion" class="section-content">
-      <div class="card">
-        <h3>➕ Agregar Excepción Manualmente</h3>
-        <p style="color:#666; margin-bottom:15px;">Registra vacaciones, permisos, incapacidades o eventos. Si eliges <b>Evento</b>, se aplicará a todos los empleados.</p>
-        <div style="background:#f8f9fa; padding:20px; border-radius:8px;">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Empleado *</label>
-              <select id="excepcionEmpleado">
-                <option value="">-- Seleccionar --</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Tipo *</label>
-              <select id="excepcionTipo">
-                <option value="VACACIONES">Vacaciones</option>
-                <option value="PERMISO">Permiso</option>
-                <option value="INCAPACIDAD">Incapacidad</option>
-                <option value="FALTA_JUST">Falta Justificada</option>
-                <option value="RETARDO">Retardo Justificado</option>
-                <option value="EVENTO">Evento (todos los empleados)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Fecha Inicio *</label>
-              <input type="date" id="excepcionFechaInicio">
-            </div>
-            <div class="form-group">
-              <label>Fecha Fin *</label>
-              <input type="date" id="excepcionFechaFin">
-            </div>
-            <div class="form-group">
-              <label>Hora Inicio (permisos)</label>
-              <input type="time" id="excepcionHoraInicio">
-            </div>
-            <div class="form-group">
-              <label>Hora Fin (permisos)</label>
-              <input type="time" id="excepcionHoraFin">
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>Motivo *</label>
-              <textarea id="excepcionMotivo" rows="3" placeholder="Describe el motivo..."></textarea>
-            </div>
+        <div class="charts-grid">
+          <div class="card">
+            <h3>📊 Tendencia de Asistencia</h3>
+            <div class="chart-container"><canvas id="chartTendencia"></canvas></div>
           </div>
-          <button id="btnGuardarExcepcion" onclick="crearExcepcionManual()" class="btn btn-success" style="width:100%; padding:12px;">💾 Guardar Excepción</button>
+          <div class="card">
+            <h3>⏰ Distribución de Horarios</h3>
+            <div class="chart-container"><canvas id="chartHorarios"></canvas></div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="card">
+            <h3>🏢 Comparativa por Sucursal</h3>
+            <div class="chart-container"><canvas id="chartSucursales"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>📉 Ausentismo por Día de Semana</h3>
+            <div class="chart-container"><canvas id="chartAusentismo"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📋 Métricas por Departamento</h3>
+          <table id="tablaDepartamentos">
+            <thead>
+              <tr><th>Departamento</th><th>Empleados</th><th>Asistencia %</th><th>Retardos</th><th>Faltas</th><th>Excepciones</th></tr>
+            </thead>
+            <tbody><tr><td colspan="6" class="empty-state">Cargando...</td></tr></tbody>
+          </table>
         </div>
       </div>
-    </div>
 
-    <div id="solicitudes" class="section-content">
-      <div class="card">
-        <h3>📝 Solicitudes Pendientes de Aprobación</h3>
-        <table id="tablaSolicitudes">
-          <thead><tr><th>Empleado</th><th>Tipo</th><th>Fecha</th><th>Motivo</th><th>Acción</th></tr></thead>
-          <tbody><tr><td colspan="5" class="empty-state">Cargando...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ============ REPORTES ============ -->
-    <div id="reportes" class="section-content">
-      <div class="card">
-        <h3>📥 Generación de Reportes</h3>
-        <p style="color:#666; margin-bottom:20px; font-size:14px;">
-          Descarga reportes en formato Excel (.xlsx) con datos reales del periodo seleccionado.
-        </p>
-
-        <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:20px; border-left:4px solid var(--primary);">
-          <h4 style="color:var(--primary); margin-bottom:10px;">📊 Reporte General de Asistencia</h4>
-          <p style="color:#666; font-size:13px; margin-bottom:15px;">
-            Incluye todos los empleados con horas trabajadas, retardos, faltas, excepciones y cumplimiento.
-          </p>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Fecha Inicio *</label>
-              <input type="date" id="repGenDesde">
-            </div>
-            <div class="form-group">
-              <label>Fecha Fin *</label>
-              <input type="date" id="repGenHasta">
+      <!-- ============ DÍAS INHÁBILES ============ -->
+      <div id="inhabilies" class="section-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>🚫 Gestión de Días Inhábiles</h3>
+            <div>
+              <button class="btn btn-success" onclick="abrirModalInhabil()">➕ Agregar Día Inhábil</button>
             </div>
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'hoy')">Hoy</button>
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'semana')">Esta semana</button>
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'mes')">Este mes</button>
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('rep', 'mesAnterior')">Mes anterior</button>
-          </div>
-          <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:10px;">
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
-              <input type="checkbox" id="repGenIncluirRegistros" checked>
-              Incluir hoja detallada de registros
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
-              <input type="checkbox" id="repGenIncluirExcepciones" checked>
-              Incluir hoja de excepciones
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
-              <input type="checkbox" id="repGenSoloIncidencias">
-              Solo con incidencias
-            </label>
-          </div>
-          <button id="btnRepGeneral" class="btn btn-primary" style="width:100%; padding:12px; margin-top:5px;" onclick="descargarReporteGeneral()">
-            📥 Descargar Reporte General
-          </button>
-        </div>
-
-        <div style="background:#f8f9fa; padding:20px; border-radius:8px; border-left:4px solid var(--info);">
-          <h4 style="color:var(--info); margin-bottom:10px;">👤 Reporte Detallado por Empleado</h4>
-          <p style="color:#666; font-size:13px; margin-bottom:15px;">
-            Selecciona uno o varios empleados para generar un reporte individual con marcas, horas diarias y resumen.
+          <p style="color:var(--text-light); font-size:13px; margin-bottom:15px;">
+            Configura los días festivos, puentes y periodos vacacionales. Estos días no contarán como faltas.
           </p>
 
-          <div class="form-group">
-            <label>Buscar empleado</label>
-            <input type="text" id="repEmpBuscar" placeholder="Filtra por nombre, ID o departamento..." oninput="filtrarListaEmpleadosReporte()">
+          <div class="filter-bar">
+            <label>Año:</label>
+            <select id="inhabilAnio" onchange="cargarDiasInhabilies()">
+              <option value="2024">2024</option>
+              <option value="2025" selected>2025</option>
+              <option value="2026">2026</option>
+            </select>
+            <label>Mes:</label>
+            <select id="inhabilMes" onchange="renderCalendarioInhabilies()">
+              <option value="0">Enero</option><option value="1">Febrero</option>
+              <option value="2">Marzo</option><option value="3">Abril</option>
+              <option value="4">Mayo</option><option value="5">Junio</option>
+              <option value="6">Julio</option><option value="7">Agosto</option>
+              <option value="8">Septiembre</option><option value="9">Octubre</option>
+              <option value="10">Noviembre</option><option value="11">Diciembre</option>
+            </select>
           </div>
 
-          <div class="form-group">
-            <label>
-              Empleados seleccionados
-              <button class="btn btn-sm" style="float:right; padding:2px 8px; font-size:11px; background:#e0e0e0; margin:0;" onclick="toggleTodosEmpleadosReporte()">Todos / Ninguno</button>
-            </label>
-            <div id="repEmpLista" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:8px; background:white;">
-              <div style="color:#888; font-size:13px;">Cargando empleados...</div>
-            </div>
+          <div class="calendario-header">
+            <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
           </div>
+          <div class="calendario" id="calendarioInhabilies"></div>
+        </div>
 
-          <div class="form-grid" style="margin-top:15px;">
-            <div class="form-group">
-              <label>Fecha Inicio *</label>
-              <input type="date" id="repEmpDesde">
-            </div>
-            <div class="form-group">
-              <label>Fecha Fin *</label>
-              <input type="date" id="repEmpHasta">
-            </div>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'hoy')">Hoy</button>
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'semana')">Esta semana</button>
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'mes')">Este mes</button>
-            <button class="btn" style="background:#e8eaf6; color:var(--primary);" onclick="setRangoRapido('emp', 'mesAnterior')">Mes anterior</button>
-          </div>
-
-          <button id="btnRepEmpleado" class="btn" style="width:100%; padding:12px; background:var(--info); color:white;" onclick="descargarReporteEmpleados()">
-            📥 Descargar Reporte por Empleado
-          </button>
+        <div class="card">
+          <h3>📋 Lista de Días Inhábiles</h3>
+          <table id="tablaInhabilies">
+            <thead>
+              <tr><th>Fecha</th><th>Nombre</th><th>Tipo</th><th>Sucursales</th><th>Acciones</th></tr>
+            </thead>
+            <tbody><tr><td colspan="5" class="empty-state">Cargando...</td></tr></tbody>
+          </table>
         </div>
       </div>
-    </div>
 
-    <div id="auditoria" class="section-content">
-      <div class="card">
-        <h3>🔍 Log de Cambios y Accesos</h3>
-        <table id="tablaAuditoria">
-          <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
-          <tbody><tr><td colspan="4" class="empty-state">Cargando...</td></tr></tbody>
-        </table>
+      <!-- ============ AGREGAR EXCEPCIÓN ============ -->
+      <div id="agregar-excepcion" class="section-content">
+        <div class="card">
+          <h3>➕ Agregar Excepción Manualmente</h3>
+          <p style="color:var(--text-light); margin-bottom:15px; font-size:13px;">
+            Registra vacaciones, permisos, incapacidades o eventos. Si eliges <b>Evento</b>, se aplicará a todos los empleados.
+          </p>
+          <div style="background:#f8f9fa; padding:20px; border-radius:8px;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Empleado *</label>
+                <select id="excepcionEmpleado">
+                  <option value="">-- Seleccionar --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tipo *</label>
+                <select id="excepcionTipo">
+                  <option value="VACACIONES">Vacaciones</option>
+                  <option value="PERMISO">Permiso</option>
+                  <option value="INCAPACIDAD">Incapacidad</option>
+                  <option value="FALTA_JUST">Falta Justificada</option>
+                  <option value="RETARDO">Retardo Justificado</option>
+                  <option value="EVENTO">Evento (todos los empleados)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Fecha Inicio *</label>
+                <input type="date" id="excepcionFechaInicio">
+              </div>
+              <div class="form-group">
+                <label>Fecha Fin *</label>
+                <input type="date" id="excepcionFechaFin">
+              </div>
+              <div class="form-group">
+                <label>Hora Inicio (permisos)</label>
+                <input type="time" id="excepcionHoraInicio">
+              </div>
+              <div class="form-group">
+                <label>Hora Fin (permisos)</label>
+                <input type="time" id="excepcionHoraFin">
+              </div>
+              <div class="form-group full">
+                <label>Motivo *</label>
+                <textarea id="excepcionMotivo" rows="3" placeholder="Describe el motivo..."></textarea>
+              </div>
+            </div>
+            <button id="btnGuardarExcepcion" onclick="crearExcepcionManual()" class="btn btn-success" style="width:100%; padding:12px;">💾 Guardar Excepción</button>
+          </div>
+        </div>
       </div>
+
+      <!-- ============ SOLICITUDES ============ -->
+      <div id="solicitudes" class="section-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>📝 Solicitudes Pendientes de Aprobación</h3>
+            <button class="btn btn-primary btn-sm" onclick="cargarSolicitudes()">🔄 Actualizar</button>
+          </div>
+          <table id="tablaSolicitudes">
+            <thead><tr><th>Empleado</th><th>Tipo</th><th>Fecha</th><th>Motivo</th><th>Acción</th></tr></thead>
+            <tbody><tr><td colspan="5" class="empty-state">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ REPORTES ============ -->
+      <div id="reportes" class="section-content">
+        <div class="card">
+          <h3>📥 Generación de Reportes</h3>
+          <p style="color:var(--text-light); margin-bottom:20px; font-size:14px;">
+            Descarga reportes en formato Excel (.xlsx) con datos reales del periodo seleccionado.
+          </p>
+
+          <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:20px; border-left:4px solid var(--primary);">
+            <h4 style="color:var(--primary); margin-bottom:10px;">📊 Reporte General de Asistencia</h4>
+            <p style="color:var(--text-light); font-size:13px; margin-bottom:15px;">
+              Incluye todos los empleados con horas trabajadas, retardos, faltas, excepciones y cumplimiento.
+            </p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Fecha Inicio *</label>
+                <input type="date" id="repGenDesde">
+              </div>
+              <div class="form-group">
+                <label>Fecha Fin *</label>
+                <input type="date" id="repGenHasta">
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('rep', 'hoy')">Hoy</button>
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('rep', 'semana')">Esta semana</button>
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('rep', 'mes')">Este mes</button>
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('rep', 'mesAnterior')">Mes anterior</button>
+            </div>
+            <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:15px;">
+              <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
+                <input type="checkbox" id="repGenIncluirRegistros" checked> Incluir hoja detallada
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;">
+                <input type="checkbox" id="repGenIncluirExcepciones" checked> Incluir excepciones
+              </label>
+            </div>
+            <button id="btnRepGeneral" class="btn btn-primary" style="width:100%; padding:12px;" onclick="descargarReporteGeneral()">
+              📥 Descargar Reporte General
+            </button>
+          </div>
+
+          <div style="background:#f8f9fa; padding:20px; border-radius:8px; border-left:4px solid var(--info);">
+            <h4 style="color:var(--info); margin-bottom:10px;">👤 Reporte Detallado por Empleado</h4>
+            <p style="color:var(--text-light); font-size:13px; margin-bottom:15px;">
+              Selecciona uno o varios empleados para generar un reporte individual.
+            </p>
+            <div class="form-group">
+              <label>Buscar empleado</label>
+              <input type="text" id="repEmpBuscar" placeholder="Filtra por nombre, ID o departamento..." oninput="filtrarListaEmpleadosReporte()">
+            </div>
+            <div class="form-group">
+              <label>
+                Empleados seleccionados
+                <button class="btn btn-sm btn-ghost" style="float:right; padding:2px 8px; font-size:11px;" onclick="toggleTodosEmpleadosReporte()">Todos / Ninguno</button>
+              </label>
+              <div id="repEmpLista" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:8px; background:white;">
+                <div style="color:#888; font-size:13px;">Cargando empleados...</div>
+              </div>
+            </div>
+            <div class="form-grid" style="margin-top:15px;">
+              <div class="form-group">
+                <label>Fecha Inicio *</label>
+                <input type="date" id="repEmpDesde">
+              </div>
+              <div class="form-group">
+                <label>Fecha Fin *</label>
+                <input type="date" id="repEmpHasta">
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('emp', 'hoy')">Hoy</button>
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('emp', 'semana')">Esta semana</button>
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('emp', 'mes')">Este mes</button>
+              <button class="btn btn-ghost btn-sm" onclick="setRangoRapido('emp', 'mesAnterior')">Mes anterior</button>
+            </div>
+            <button id="btnRepEmpleado" class="btn btn-info" style="width:100%; padding:12px;" onclick="descargarReporteEmpleados()">
+              📥 Descargar Reporte por Empleado
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ AUDITORÍA ============ -->
+      <div id="auditoria" class="section-content">
+        <div class="card">
+          <div class="card-header">
+            <h3>🔍 Log de Cambios y Accesos</h3>
+            <button class="btn btn-primary btn-sm" onclick="cargarAuditoria()">🔄 Actualizar</button>
+          </div>
+          <table id="tablaAuditoria">
+            <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
+            <tbody><tr><td colspan="4" class="empty-state">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
+<!-- ============ MODAL EMPLEADO ============ -->
 <div class="modal-overlay" id="modalEmpleado">
   <div class="modal">
     <h3 id="modalEmpleadoTitulo">Nuevo Empleado</h3>
     <form id="formEmpleado" onsubmit="guardarEmpleado(event)">
       <input type="hidden" id="empIdSistema">
-
-      <!-- Datos básicos -->
-      <h4 style="margin-bottom:10px; color:var(--primary); font-size:14px; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:6px;">Datos del Empleado</h4>
       <div class="form-grid">
         <div class="form-group">
           <label>Número de Empleado (ID) *</label>
@@ -449,10 +842,6 @@
           <input type="email" id="empEmail" placeholder="juan@empresa.com">
         </div>
         <div class="form-group">
-  <label>PIN de acceso * (4-6 dígitos)</label>
-  <input type="text" id="empPin" required placeholder="Ej: 1234" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="off">
-</div>
-        <div class="form-group">
           <label>Sucursal *</label>
           <select id="empSucursal" required>
             <option value="">-- Seleccionar --</option>
@@ -464,39 +853,63 @@
             <option value="">-- Seleccionar --</option>
           </select>
         </div>
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Dirección</label>
-          <input type="text" id="empDireccion" placeholder="Av. Reforma 123, Col. Centro, CDMX">
-        </div>
       </div>
-
-      <!-- Contacto -->
-      <h4 style="margin:20px 0 10px; color:var(--primary); font-size:14px; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:6px;">Contacto</h4>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input type="tel" id="empTelefono" placeholder="55 1234 5678" maxlength="20">
-        </div>
-        <div class="form-group">
-          <label>Teléfono de Emergencia</label>
-          <input type="tel" id="empTelEmergencia" placeholder="55 8765 4321" maxlength="20">
-        </div>
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Nombre del Contacto de Emergencia</label>
-          <input type="text" id="empNombreEmergencia" placeholder="María García (esposa)">
-        </div>
-      </div>
-
       <div class="modal-buttons">
-        <button type="button" class="btn" style="background:#e0e0e0;" onclick="cerrarModalEmpleado()">Cancelar</button>
+        <button type="button" class="btn btn-ghost" onclick="cerrarModalEmpleado()">Cancelar</button>
         <button type="submit" class="btn btn-success" id="btnGuardarEmpleado">💾 Guardar</button>
       </div>
     </form>
   </div>
 </div>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
+<!-- ============ MODAL DÍA INHÁBIL ============ -->
+<div class="modal-overlay" id="modalInhabil">
+  <div class="modal">
+    <h3 id="modalInhabilTitulo">🚫 Agregar Día Inhábil</h3>
+    <form id="formInhabil" onsubmit="guardarDiaInhabil(event)">
+      <input type="hidden" id="inhabilIdSistema">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fecha *</label>
+          <input type="date" id="inhabilFecha" required>
+        </div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select id="inhabilTipo" required>
+            <option value="OFICIAL">Oficial (Feriado Nacional)</option>
+            <option value="EMPRESA">Empresa (Personalizado)</option>
+            <option value="PUENTE">Puente</option>
+            <option value="VACACIONES">Vacaciones Colectivas</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Nombre / Descripción *</label>
+          <input type="text" id="inhabilNombre" required placeholder="Ej: Día de la Independencia">
+        </div>
+        <div class="form-group full">
+          <label>Sucursales Aplicables</label>
+          <select id="inhabilSucursales" multiple style="min-height:80px;">
+            <option value="*">Todas las sucursales</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Notas</label>
+          <textarea id="inhabilNotas" rows="2" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button type="button" class="btn btn-ghost" onclick="cerrarModalInhabil()">Cancelar</button>
+        <button type="submit" class="btn btn-success" id="btnGuardarInhabil">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
+// ============================================================
+// CONFIGURACIÓN GLOBAL
+// ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec';
 
 let currentToken = localStorage.getItem('admin_token');
@@ -504,14 +917,25 @@ let currentEmpresa = null;
 let empleadosCache = [];
 let sucursalesCache = [];
 let turnosCache = [];
+let diasInhabiliesCache = [];
 let semanaOffset = 0;
 let registrosSemana = {};
 let semanaRango = { desde: null, hasta: null, inicio: null };
+let charts = {};
+let enPlantaCache = [];
+let relojInterval = null;
+let autoRefreshInterval = null;
 
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ============================================================
+// UTILIDADES
+// ============================================================
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.textContent = msg;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  el.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${msg}</span>`;
   document.getElementById('toastContainer').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
@@ -527,7 +951,7 @@ function setLoading(btn, loading, textoOriginal = null) {
   if (!btn) return;
   if (loading) {
     btn.dataset.original = btn.innerHTML;
-    btn.innerHTML = '<span class="loading"></span>Procesando...';
+    btn.innerHTML = '<span class="loading"></span> Procesando...';
     btn.disabled = true;
   } else {
     btn.innerHTML = textoOriginal || btn.dataset.original || btn.innerHTML;
@@ -535,8 +959,16 @@ function setLoading(btn, loading, textoOriginal = null) {
   }
 }
 
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+// ============================================================
+// AUTENTICACIÓN
+// ============================================================
 window.onload = function() {
   if (currentToken) verificarSesion();
+  else document.getElementById('loginScreen').style.display = 'flex';
 };
 
 async function verificarSesion() {
@@ -577,8 +1009,9 @@ async function loginAdmin() {
 function mostrarDashboard() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('empresaTitle').textContent = `Panel: ${currentEmpresa.nombre}`;
-  document.getElementById('empresaSubTitle').textContent = `ID: ${currentEmpresa.id} | Admin: ${currentEmpresa.admin}`;
+  document.getElementById('sidebarEmpresa').textContent = currentEmpresa.nombre;
+  document.getElementById('userName').textContent = currentEmpresa.admin || 'Admin';
+  document.getElementById('userAvatar').textContent = (currentEmpresa.admin || 'A').charAt(0).toUpperCase();
   cargarDatosIniciales();
 }
 
@@ -587,18 +1020,362 @@ function logout() {
   location.reload();
 }
 
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ============================================================
+// NAVEGACIÓN (MENÚ LATERAL)
+// ============================================================
+function showTab(tabId, btn) {
+  document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  if (btn) btn.classList.add('active');
+  
+  const titles = {
+    resumen: ['Dashboard en Vivo', 'Vista general y actividad del día'],
+    hoy: ['Semana Actual', 'Registro semanal de asistencia'],
+    empleados: ['Empleados', 'Gestión del catálogo de empleados'],
+    analisis: ['Análisis y Tendencias', 'Métricas avanzadas y comparativas'],
+    inhabilies: ['Días Inhábiles', 'Gestión de feriados y días no laborables'],
+    'agregar-excepcion': ['Agregar Excepción', 'Registrar vacaciones, permisos o eventos'],
+    solicitudes: ['Solicitudes', 'Aprobación de solicitudes pendientes'],
+    reportes: ['Reportes', 'Generación de reportes en Excel'],
+    auditoria: ['Auditoría', 'Log de cambios y accesos al sistema']
+  };
+  document.getElementById('pageTitle').textContent = titles[tabId]?.[0] || tabId;
+  document.getElementById('pageBreadcrumb').textContent = titles[tabId]?.[1] || '';
+  
+  if (tabId === 'empleados' && empleadosCache.length === 0) cargarEmpleados();
+  if (tabId === 'agregar-excepcion') {
+    if (empleadosCache.length === 0) cargarEmpleados();
+    else actualizarSelectEmpleados();
+  }
+  if (tabId === 'reportes') inicializarReportes();
+  if (tabId === 'analisis') cargarAnalisis();
+  if (tabId === 'inhabilies') cargarDiasInhabilies();
+  if (tabId === 'resumen') { cargarDashboardEnVivo(); cargarRegistrosRecientes(); iniciarReloj(); }
+  
+  if (window.innerWidth <= 1024) document.getElementById('sidebar').classList.remove('open');
+}
+
+// ============================================================
+// CARGA INICIAL
+// ============================================================
 async function cargarDatosIniciales() {
   await cargarEmpleados();
   await cargarSucursalesYTurnos();
   cargarSolicitudes();
   cargarAuditoria();
+  cargarDashboardEnVivo();
   cargarRegistrosRecientes();
-  cargarDashboardStats();
   cargarSemanaActual();
+  iniciarReloj();
+  iniciarAutoRefresh();
 }
 
-function cambiarSemana(direccion) {
-  semanaOffset += direccion;
+// ============================================================
+// DASHBOARD EN VIVO
+// ============================================================
+function iniciarReloj() {
+  if (relojInterval) clearInterval(relojInterval);
+  actualizarReloj();
+  relojInterval = setInterval(actualizarReloj, 1000);
+}
+
+function actualizarReloj() {
+  const ahora = new Date();
+  const hh = String(ahora.getHours()).padStart(2, '0');
+  const mm = String(ahora.getMinutes()).padStart(2, '0');
+  const ss = String(ahora.getSeconds()).padStart(2, '0');
+  const clockEl = document.getElementById('liveClock');
+  if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss}`;
+  
+  const dateEl = document.getElementById('liveDate');
+  if (dateEl) {
+    dateEl.textContent = ahora.toLocaleDateString('es-MX', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+}
+
+async function cargarDashboardEnVivo() {
+  const hoy = fechaLocalISO(new Date());
+  try {
+    const res = await fetch(`${API_URL}?accion=dashboard_en_vivo&desde=${hoy}&hasta=${hoy}&token=${currentToken}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      procesarDatosEnVivo(data);
+    } else {
+      await cargarRegistrosRecientesYProcesar();
+    }
+  } catch (e) {
+    console.error('Error dashboard en vivo:', e);
+    await cargarRegistrosRecientesYProcesar();
+  }
+}
+
+async function cargarRegistrosRecientesYProcesar() {
+  try {
+    const res = await fetch(`${API_URL}?accion=registros_recientes&token=${currentToken}`);
+    const data = await res.json();
+    if (data.registros) {
+      procesarDatosEnVivo({ registros: data.registros, total: data.total });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function procesarDatosEnVivo(data) {
+  const registros = data.registros || [];
+  const totalEmpleados = empleadosCache.length || 0;
+  const hoy = fechaLocalISO(new Date());
+  
+  const porEmpleado = {};
+  registros.forEach(r => {
+    const key = r.empleado_id || r.id || r.nombre;
+    if (!porEmpleado[key]) {
+      porEmpleado[key] = {
+        id: r.empleado_id || r.id,
+        nombre: r.nombre,
+        departamento: r.departamento || '—',
+        sucursal: r.sucursal || '—',
+        entradas: [],
+        salidas: [],
+        ubicacionOk: r.ubicacion_valida !== false,
+        puntual: r.puntual !== false
+      };
+    }
+    if (r.tipo === 'entrada') {
+      porEmpleado[key].entradas.push(r);
+      if (r.ubicacion_valida === false) porEmpleado[key].ubicacionOk = false;
+      if (r.puntual === false) porEmpleado[key].puntual = false;
+    } else {
+      porEmpleado[key].salidas.push(r);
+    }
+  });
+  
+  const enPlanta = [];
+  const salieron = [];
+  let retardos = 0;
+  let fueraUbicacion = 0;
+  let entradasHoy = 0;
+  
+  Object.values(porEmpleado).forEach(emp => {
+    const ultimaEntrada = emp.entradas[emp.entradas.length - 1];
+    const ultimaSalida = emp.salidas[emp.salidas.length - 1];
+    entradasHoy += emp.entradas.length;
+    
+    if (!emp.ubicacionOk) fueraUbicacion++;
+    if (!emp.puntual) retardos++;
+    
+    if (ultimaEntrada && (!ultimaSalida || 
+        new Date(`${hoy}T${ultimaEntrada.hora}`) > new Date(`${hoy}T${ultimaSalida.hora}`))) {
+      enPlanta.push({ ...emp, horaEntrada: ultimaEntrada.hora });
+    } else if (ultimaEntrada && ultimaSalida) {
+      salieron.push({ ...emp, horaSalida: ultimaSalida.hora });
+    }
+  });
+  
+  enPlanta.sort((a, b) => a.horaEntrada.localeCompare(b.horaEntrada));
+  enPlantaCache = enPlanta;
+  
+  document.getElementById('statEnPlanta').textContent = enPlanta.length;
+  document.getElementById('statEntradasHoy').textContent = entradasHoy;
+  document.getElementById('statRetardosHoy').textContent = retardos;
+  document.getElementById('statFueraUbicacion').textContent = fueraUbicacion;
+  document.getElementById('statSinRegistro').textContent = Math.max(0, totalEmpleados - Object.keys(porEmpleado).length);
+  
+  const tasa = totalEmpleados > 0 ? Math.round((Object.keys(porEmpleado).length / totalEmpleados) * 100) : 0;
+  document.getElementById('statTasaHoy').textContent = tasa + '%';
+  document.getElementById('liveTotalEmpleados').textContent = totalEmpleados;
+  document.getElementById('countEnPlanta').textContent = enPlanta.length;
+  
+  renderTablaEnPlanta(enPlanta);
+  renderIncidencias(porEmpleado);
+  renderChartEntradasPorHora(registros);
+}
+
+function renderTablaEnPlanta(lista) {
+  const tbody = document.getElementById('tbodyEnPlanta');
+  if (!lista || lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="icon">🏢</div>No hay empleados en planta ahora</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = lista.map(emp => {
+    const tiempo = calcularTiempoEnPlanta(emp.horaEntrada);
+    const puntBadge = emp.puntual 
+      ? '<span class="puntual">✅ A tiempo</span>'
+      : '<span class="retardo">⏰ Retardo</span>';
+    const ubicBadge = emp.ubicacionOk
+      ? '<span class="ubic-ok-badge">📍 Autorizada</span>'
+      : '<span class="ubic-fuera">🚫 Fuera</span>';
+    const filaClass = !emp.ubicacionOk ? 'fila-fuera-ubicacion' 
+                    : (!emp.puntual ? 'fila-retardo' : '');
+    
+    return `<tr class="${filaClass}">
+      <td><strong>${emp.nombre}</strong><br><small style="color:#888">${emp.id || ''}</small></td>
+      <td>${emp.departamento}</td>
+      <td><span style="font-family:'Courier New'; font-weight:700; color:var(--success);">${emp.horaEntrada}</span></td>
+      <td>${puntBadge}</td>
+      <td>${ubicBadge}</td>
+      <td>${emp.sucursal}</td>
+      <td><span class="tiempo-planta">${tiempo}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function calcularTiempoEnPlanta(horaEntrada) {
+  if (!horaEntrada) return '—';
+  const [h, m] = horaEntrada.split(':').map(Number);
+  const ahora = new Date();
+  const entrada = new Date(ahora);
+  entrada.setHours(h, m, 0, 0);
+  const diff = Math.floor((ahora - entrada) / 1000 / 60);
+  if (diff < 0) return '—';
+  const horas = Math.floor(diff / 60);
+  const mins = diff % 60;
+  return `${String(horas).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m`;
+}
+
+function filtrarEnPlanta() {
+  const q = document.getElementById('buscarEnPlanta').value.toLowerCase().trim();
+  if (!q) { renderTablaEnPlanta(enPlantaCache); return; }
+  const filtrados = enPlantaCache.filter(e =>
+    (e.nombre || '').toLowerCase().includes(q) ||
+    (e.id || '').toLowerCase().includes(q) ||
+    (e.departamento || '').toLowerCase().includes(q)
+  );
+  renderTablaEnPlanta(filtrados);
+}
+
+function renderIncidencias(porEmpleado) {
+  const container = document.getElementById('listaIncidencias');
+  const incidencias = [];
+  
+  Object.values(porEmpleado).forEach(emp => {
+    if (!emp.ubicacionOk) {
+      incidencias.push({
+        tipo: 'ubicacion', icon: '📍', nombre: emp.nombre,
+        detalle: 'Registró fuera de una ubicación permitida',
+        hora: emp.entradas[0]?.hora || '—', prioridad: 2
+      });
+    }
+    if (!emp.puntual && emp.entradas.length > 0) {
+      incidencias.push({
+        tipo: 'retardo', icon: '⏰', nombre: emp.nombre,
+        detalle: 'Entrada después de la hora límite',
+        hora: emp.entradas[0]?.hora || '—', prioridad: 1
+      });
+    }
+  });
+  
+  incidencias.sort((a, b) => b.prioridad - a.prioridad);
+  document.getElementById('countIncidencias').textContent = incidencias.length;
+  
+  if (incidencias.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Sin incidencias el día de hoy</div>';
+    return;
+  }
+  
+  container.innerHTML = incidencias.map(inc => `
+    <div class="incidencia-item">
+      <div class="incidencia-icon ${inc.tipo}">${inc.icon}</div>
+      <div class="incidencia-info">
+        <div class="nombre">${inc.nombre}</div>
+        <div class="detalle">${inc.detalle}</div>
+      </div>
+      <div class="hora">${inc.hora}</div>
+    </div>
+  `).join('');
+}
+
+function renderChartEntradasPorHora(registros) {
+  const entradas = registros.filter(r => r.tipo === 'entrada');
+  const buckets = {};
+  for (let h = 5; h <= 22; h++) buckets[`${String(h).padStart(2,'0')}:00`] = 0;
+  
+  entradas.forEach(r => {
+    if (!r.hora) return;
+    const h = parseInt(r.hora.split(':')[0]);
+    const key = `${String(h).padStart(2,'0')}:00`;
+    if (buckets[key] !== undefined) buckets[key]++;
+  });
+  
+  destroyChart('entradasHora');
+  const ctx = document.getElementById('chartEntradasPorHora');
+  if (!ctx) return;
+  
+  charts.entradasHora = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(buckets),
+      datasets: [{
+        label: 'Entradas',
+        data: Object.values(buckets),
+        backgroundColor: 'rgba(26, 35, 126, .7)',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+function iniciarAutoRefresh() {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(() => {
+    if (document.getElementById('resumen').classList.contains('active')) {
+      cargarDashboardEnVivo();
+    }
+  }, 60000);
+}
+
+// ============================================================
+// REGISTROS RECIENTES
+// ============================================================
+async function cargarRegistrosRecientes() {
+  const tbody = document.querySelector('#tablaReciente tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Cargando…</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}?accion=registros_recientes&token=${currentToken}`);
+    const data = await res.json();
+    const regs = data.registros || [];
+    if (regs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Sin registros recientes</td></tr>';
+      return;
+    }
+    tbody.innerHTML = regs.slice(0, 15).map(r => {
+      const tipoBadge = r.tipo === 'entrada'
+        ? '<span class="badge badge-approved">Entrada</span>'
+        : '<span class="badge badge-info">Salida</span>';
+      const puntBadge = r.puntual === false
+        ? '<span class="retardo">⏰ Retardo</span>'
+        : (r.tipo === 'entrada' ? '<span class="puntual">✅ A tiempo</span>' : '—');
+      const ubicBadge = r.ubicacion_valida === false
+        ? '<span class="ubic-fuera">🚫 Fuera</span>'
+        : '<span class="ubic-ok-badge">📍 OK</span>';
+      return `<tr><td>${r.hora}</td><td>${r.nombre}</td><td>${tipoBadge}</td><td>${puntBadge}</td><td>${ubicBadge}</td><td>${r.sucursal || '—'}</td></tr>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+// ============================================================
+// SEMANA
+// ============================================================
+function cambiarSemana(direccion, irHoy = false) {
+  if (irHoy) semanaOffset = 0;
+  else semanaOffset += direccion;
   cargarSemanaActual();
 }
 
@@ -636,11 +1413,14 @@ function renderDiasSemana(inicio) {
     const fecha = new Date(inicio);
     fecha.setDate(inicio.getDate() + i);
     const esHoy = fecha.toDateString() === hoy.toDateString();
+    const fechaStr = fechaLocalISO(fecha);
+    const inhabil = diasInhabiliesCache.find(d => d.fecha === fechaStr);
     grid.innerHTML += `
-      <div class="dia-card ${esHoy ? 'hoy' : ''}">
+      <div class="dia-card ${esHoy ? 'hoy' : ''} ${inhabil ? 'inhabil' : ''}">
         <div class="nombre">${dias[i]}</div>
         <div class="fecha">${fecha.getDate()}</div>
         <div class="stats" id="stats-dia-${i}"><div style="color:#bbb">…</div></div>
+        ${inhabil ? `<div class="tag-inhabil">${inhabil.nombre}</div>` : ''}
       </div>
     `;
   }
@@ -731,30 +1511,51 @@ function actualizarStatsDias() {
   }
 }
 
+// ============================================================
+// EMPLEADOS
+// ============================================================
 async function cargarEmpleados() {
   const tbody = document.querySelector('#tablaEmpleados tbody');
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>';
   try {
     const res = await fetch(`${API_URL}?accion=lista_empleados&token=${currentToken}`);
     const data = await res.json();
     if (data.status === 'ok') {
       empleadosCache = data.empleados || [];
-      document.getElementById('statEmpleados').textContent = data.total;
+      if (document.getElementById('statEmpleados')) document.getElementById('statEmpleados').textContent = data.total;
       actualizarSelectEmpleados();
-      renderEmpleados(data.empleados);
+      actualizarFiltrosEmpleados();
+      renderEmpleados(empleadosCache);
     } else {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${data.mensaje || 'No se pudo cargar'}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${data.mensaje || 'No se pudo cargar'}</td></tr>`;
     }
   } catch (e) {
     console.error(e);
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Error de conexión</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Error de conexión</td></tr>';
+  }
+}
+
+function actualizarFiltrosEmpleados() {
+  const deps = [...new Set(empleadosCache.map(e => e.departamento).filter(Boolean))].sort();
+  const selDep = document.getElementById('filtroDepartamento');
+  if (selDep) {
+    selDep.innerHTML = '<option value="">Todos</option>' + deps.map(d => `<option value="${d}">${d}</option>`).join('');
+  }
+  const selSuc = document.getElementById('filtroSucursal');
+  if (selSuc) {
+    selSuc.innerHTML = '<option value="">Todas</option>' + sucursalesCache.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+  }
+  const selTur = document.getElementById('filtroTurno');
+  if (selTur) {
+    selTur.innerHTML = '<option value="">Todos</option>' + turnosCache.map(t => `<option value="${t.turno_id}">${t.nombre}</option>`).join('');
   }
 }
 
 function renderEmpleados(lista) {
   const tbody = document.querySelector('#tablaEmpleados tbody');
+  if (!tbody) return;
   if (!lista || lista.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="icon">👥</div>No hay empleados registrados</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="icon">👥</div>No hay empleados registrados</td></tr>';
     return;
   }
   tbody.innerHTML = lista.map(emp => `
@@ -765,7 +1566,6 @@ function renderEmpleados(lista) {
       <td>${emp.sucursal_id}</td>
       <td>${emp.turno_id}</td>
       <td>${emp.email || '—'}</td>
-      <td>${emp.telefono || '—'}</td>
       <td>
         <button class="btn btn-primary btn-sm" onclick="editarEmpleado('${emp.id}')">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="eliminarEmpleado('${emp.id}')">🗑️</button>
@@ -774,14 +1574,24 @@ function renderEmpleados(lista) {
 }
 
 function filtrarEmpleados() {
-  const q = document.getElementById('buscarEmpleado').value.toLowerCase().trim();
-  if (!q) { renderEmpleados(empleadosCache); return; }
-  const filtrados = empleadosCache.filter(emp =>
-    (emp.nombre || '').toLowerCase().includes(q) ||
-    (emp.id || '').toLowerCase().includes(q) ||
-    (emp.departamento || '').toLowerCase().includes(q) ||
-    (emp.email || '').toLowerCase().includes(q)
-  );
+  const q = (document.getElementById('buscarEmpleado')?.value || '').toLowerCase().trim();
+  const dep = document.getElementById('filtroDepartamento')?.value || '';
+  const suc = document.getElementById('filtroSucursal')?.value || '';
+  const tur = document.getElementById('filtroTurno')?.value || '';
+  
+  let filtrados = empleadosCache;
+  if (q) {
+    filtrados = filtrados.filter(emp =>
+      (emp.nombre || '').toLowerCase().includes(q) ||
+      (emp.id || '').toLowerCase().includes(q) ||
+      (emp.departamento || '').toLowerCase().includes(q) ||
+      (emp.email || '').toLowerCase().includes(q)
+    );
+  }
+  if (dep) filtrados = filtrados.filter(e => e.departamento === dep);
+  if (suc) filtrados = filtrados.filter(e => e.sucursal_id === suc);
+  if (tur) filtrados = filtrados.filter(e => e.turno_id === tur);
+  
   renderEmpleados(filtrados);
 }
 
@@ -796,24 +1606,30 @@ async function cargarSucursalesYTurnos() {
     sucursalesCache = sucData.sucursales || [];
     turnosCache = turData.turnos || [];
     actualizarSelectSucursalesTurnos();
+    actualizarFiltrosEmpleados();
   } catch (e) { console.error(e); }
 }
 
 function actualizarSelectSucursalesTurnos() {
   const selectSuc = document.getElementById('empSucursal');
-  selectSuc.innerHTML = '<option value="">-- Seleccionar --</option>';
-  sucursalesCache.forEach(s => {
-    selectSuc.innerHTML += `<option value="${s.id}">${s.nombre}</option>`;
-  });
+  if (selectSuc) {
+    selectSuc.innerHTML = '<option value="">-- Seleccionar --</option>';
+    sucursalesCache.forEach(s => {
+      selectSuc.innerHTML += `<option value="${s.id}">${s.nombre}</option>`;
+    });
+  }
   const selectTur = document.getElementById('empTurno');
-  selectTur.innerHTML = '<option value="">-- Seleccionar --</option>';
-  turnosCache.forEach(t => {
-    selectTur.innerHTML += `<option value="${t.turno_id}">${t.nombre}</option>`;
-  });
+  if (selectTur) {
+    selectTur.innerHTML = '<option value="">-- Seleccionar --</option>';
+    turnosCache.forEach(t => {
+      selectTur.innerHTML += `<option value="${t.turno_id}">${t.nombre}</option>`;
+    });
+  }
 }
 
 function actualizarSelectEmpleados() {
   const select = document.getElementById('excepcionEmpleado');
+  if (!select) return;
   select.innerHTML = '<option value="">-- Seleccionar --</option>';
   empleadosCache.forEach(emp => {
     select.innerHTML += `<option value="${emp.id}">${emp.id} - ${emp.nombre}</option>`;
@@ -830,12 +1646,6 @@ function abrirModalEmpleado(empleado = null) {
   document.getElementById('empEmail').value = empleado ? (empleado.email || '') : '';
   document.getElementById('empSucursal').value = empleado ? empleado.sucursal_id : '';
   document.getElementById('empTurno').value = empleado ? empleado.turno_id : '';
-  // 🔧 Nuevos campos
-  document.getElementById('empDireccion').value = empleado ? (empleado.direccion || '') : '';
-  document.getElementById('empTelefono').value = empleado ? (empleado.telefono || '') : '';
-  document.getElementById('empTelEmergencia').value = empleado ? (empleado.telefono_emergencia || '') : '';
-  document.getElementById('empNombreEmergencia').value = empleado ? (empleado.nombre_emergencia || '') : '';
-  document.getElementById('empPin').value = empleado ? (empleado.pin || '') : '';
   document.getElementById('modalEmpleado').classList.add('show');
 }
 
@@ -855,14 +1665,11 @@ async function eliminarEmpleado(id) {
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify({
-        token: currentToken,
-        accion: 'eliminar_empleado',
-        id_sistema: id,
-        usuario: currentEmpresa.admin
-      }),
-      redirect: 'follow'
+        token: currentToken, accion: 'eliminar_empleado',
+        id_sistema: id, usuario: currentEmpresa.admin
+      })
     });
     const data = await res.json();
     if (data.status === 'ok') {
@@ -881,26 +1688,23 @@ async function guardarEmpleado(e) {
   const btn = document.getElementById('btnGuardarEmpleado');
   setLoading(btn, true);
   const idSistema = document.getElementById('empIdSistema').value;
-const data = {
-  token: currentToken,
-  accion: idSistema ? 'actualizar_empleado' : 'crear_empleado',
-  numero_empleado: document.getElementById('empNumero').value.trim(),
-  nombre: document.getElementById('empNombre').value.trim(),
-  departamento: document.getElementById('empDepartamento').value.trim(),
-  email: document.getElementById('empEmail').value.trim(),
-  sucursal_id: document.getElementById('empSucursal').value,
-  turno_id: document.getElementById('empTurno').value,
-  pin: document.getElementById('empPin').value.trim(),   // ⬅️ NUEVO
-  creado_por: currentEmpresa.admin,
-  modificado_por: currentEmpresa.admin
-};
+  const data = {
+    token: currentToken,
+    accion: idSistema ? 'actualizar_empleado' : 'crear_empleado',
+    numero_empleado: document.getElementById('empNumero').value.trim(),
+    nombre: document.getElementById('empNombre').value.trim(),
+    departamento: document.getElementById('empDepartamento').value.trim(),
+    email: document.getElementById('empEmail').value.trim(),
+    sucursal_id: document.getElementById('empSucursal').value,
+    turno_id: document.getElementById('empTurno').value,
+    creado_por: currentEmpresa.admin,
+    modificado_por: currentEmpresa.admin
+  };
   if (idSistema) data.id_sistema = idSistema;
   try {
     const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(data),
-      redirect: 'follow'
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(data)
     });
     const result = await res.json();
     if (result.status === 'ok') {
@@ -917,6 +1721,9 @@ const data = {
   }
 }
 
+// ============================================================
+// EXCEPCIONES
+// ============================================================
 async function crearExcepcionManual() {
   const btn = document.getElementById('btnGuardarExcepcion');
   const empleadoId = document.getElementById('excepcionEmpleado').value;
@@ -927,24 +1734,12 @@ async function crearExcepcionManual() {
   const horaFin = document.getElementById('excepcionHoraFin').value;
   const motivo = document.getElementById('excepcionMotivo').value.trim();
 
-  if (tipo !== 'EVENTO' && !empleadoId) {
-    toast('Selecciona un empleado', 'error');
-    return;
-  }
-  if (!fechaInicio || !fechaFin || !motivo) {
-    toast('Completa fecha inicio, fin y motivo', 'error');
-    return;
-  }
-  if (fechaFin < fechaInicio) {
-    toast('La fecha fin no puede ser anterior a la de inicio', 'error');
-    return;
-  }
+  if (tipo !== 'EVENTO' && !empleadoId) { toast('Selecciona un empleado', 'error'); return; }
+  if (!fechaInicio || !fechaFin || !motivo) { toast('Completa fecha inicio, fin y motivo', 'error'); return; }
+  if (fechaFin < fechaInicio) { toast('La fecha fin no puede ser anterior a la de inicio', 'error'); return; }
 
   const emp = empleadoId ? empleadosCache.find(e => e.id === empleadoId) : null;
-  if (tipo !== 'EVENTO' && !emp) {
-    toast('Empleado no encontrado', 'error');
-    return;
-  }
+  if (tipo !== 'EVENTO' && !emp) { toast('Empleado no encontrado', 'error'); return; }
 
   let accion;
   if (tipo === 'EVENTO') accion = 'crear_evento';
@@ -952,30 +1747,22 @@ async function crearExcepcionManual() {
   else accion = 'solicitar_justificacion';
 
   const data = {
-    token: currentToken,
-    accion,
-    tipo,
+    token: currentToken, accion, tipo,
     empleado_id: tipo === 'EVENTO' ? '*' : emp.id,
     numero_empleado: tipo === 'EVENTO' ? '*' : emp.id,
     empleado_nombre: tipo === 'EVENTO' ? 'Todos los empleados' : emp.nombre,
     sucursal_id: tipo === 'EVENTO' ? '*' : emp.sucursal_id,
     turno_id: tipo === 'EVENTO' ? '*' : emp.turno_id,
-    fecha: fechaInicio,
-    fecha_inicio: fechaInicio,
-    fecha_fin: fechaFin,
-    hora_inicio: horaInicio,
-    hora_fin: horaFin,
-    motivo,
+    fecha: fechaInicio, fecha_inicio: fechaInicio, fecha_fin: fechaFin,
+    hora_inicio: horaInicio, hora_fin: horaFin, motivo,
     creado_por: currentEmpresa.admin
   };
 
   setLoading(btn, true);
   try {
     const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(data),
-      redirect: 'follow'
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data)
     });
     const result = await response.json();
     if (result.status === 'ok') {
@@ -994,8 +1781,12 @@ async function crearExcepcionManual() {
   }
 }
 
+// ============================================================
+// SOLICITUDES
+// ============================================================
 async function cargarSolicitudes() {
   const tbody = document.querySelector('#tablaSolicitudes tbody');
+  if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Cargando…</td></tr>';
   try {
     const res = await fetch(`${API_URL}?accion=solicitudes_pendientes&token=${currentToken}`);
@@ -1031,10 +1822,8 @@ async function aprobarSolicitud(id) {
   if (!confirm('¿Aprobar esta solicitud?')) return;
   try {
     const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({token: currentToken, accion: 'aprobar_solicitud', id, aprobado_por: currentEmpresa.admin}),
-      redirect: 'follow'
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({token: currentToken, accion: 'aprobar_solicitud', id, aprobado_por: currentEmpresa.admin})
     });
     const data = await res.json();
     if (data.status === 'ok') {
@@ -1043,9 +1832,7 @@ async function aprobarSolicitud(id) {
     } else {
       toast('Error: ' + (data.mensaje || 'No se pudo aprobar'), 'error');
     }
-  } catch (e) {
-    toast('Error de conexión', 'error');
-  }
+  } catch (e) { toast('Error de conexión', 'error'); }
 }
 
 async function rechazarSolicitud(id) {
@@ -1053,10 +1840,8 @@ async function rechazarSolicitud(id) {
   if (!obs) return;
   try {
     const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({token: currentToken, accion: 'rechazar_solicitud', id, aprobado_por: currentEmpresa.admin, observaciones: obs}),
-      redirect: 'follow'
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({token: currentToken, accion: 'rechazar_solicitud', id, aprobado_por: currentEmpresa.admin, observaciones: obs})
     });
     const data = await res.json();
     if (data.status === 'ok') {
@@ -1065,13 +1850,15 @@ async function rechazarSolicitud(id) {
     } else {
       toast('Error: ' + (data.mensaje || 'No se pudo rechazar'), 'error');
     }
-  } catch (e) {
-    toast('Error de conexión', 'error');
-  }
+  } catch (e) { toast('Error de conexión', 'error'); }
 }
 
+// ============================================================
+// AUDITORÍA
+// ============================================================
 async function cargarAuditoria() {
   const tbody = document.querySelector('#tablaAuditoria tbody');
+  if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Cargando…</td></tr>';
   try {
     const res = await fetch(`${API_URL}?accion=auditoria&token=${currentToken}`);
@@ -1081,10 +1868,10 @@ async function cargarAuditoria() {
       tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin registros de auditoría</td></tr>';
       return;
     }
-    tbody.innerHTML = logs.slice(-20).reverse().map(log => {
+    tbody.innerHTML = logs.slice(-30).reverse().map(log => {
       let fecha = '';
       try { fecha = new Date(log.timestamp).toLocaleString('es-MX'); } catch(e) { fecha = log.timestamp; }
-      return `<tr><td><small>${fecha}</small></td><td>${log.usuario}</td><td><b>${log.accion}</b></td><td><small>${log.tipo}</small></td></tr>`;
+      return `<tr><td><small>${fecha}</small></td><td>${log.usuario}</td><td><b>${log.accion}</b></td><td><small>${log.tipo || ''}</small></td></tr>`;
     }).join('');
   } catch (e) {
     console.error(e);
@@ -1092,102 +1879,373 @@ async function cargarAuditoria() {
   }
 }
 
-async function cargarRegistrosRecientes() {
-  const tbody = document.querySelector('#tablaReciente tbody');
-  tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Cargando…</td></tr>';
+// ============================================================
+// ANÁLISIS Y TENDENCIAS
+// ============================================================
+async function cargarAnalisis() {
+  const dias = parseInt(document.getElementById('analisisPeriodo')?.value || '30');
+  const hasta = new Date();
+  const desde = new Date();
+  desde.setDate(desde.getDate() - dias);
+  
   try {
-    const res = await fetch(`${API_URL}?accion=registros_recientes&token=${currentToken}`);
-    const data = await res.json();
-    const regs = data.registros || [];
-    document.getElementById('statRegistros').textContent = data.total ?? regs.length;
-    if (regs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin registros recientes</td></tr>';
-      return;
-    }
-    tbody.innerHTML = regs.slice(0, 10).map(r => {
-      const tipoBadge = r.tipo === 'entrada'
-        ? '<span class="badge badge-approved">Entrada</span>'
-        : '<span class="badge badge-info">Salida</span>';
-      return `<tr><td>${r.hora}</td><td>${r.nombre}</td><td>${tipoBadge}</td><td>${r.sucursal}</td></tr>`;
-    }).join('');
-  } catch (e) {
-    console.error(e);
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Error de conexión</td></tr>';
-  }
-}
-
-async function cargarDashboardStats() {
-  try {
-    const hoy = fechaLocalISO(new Date());
-    const res = await fetch(`${API_URL}?accion=dashboard&desde=${hoy}&hasta=${hoy}&token=${currentToken}`);
+    const res = await fetch(`${API_URL}?accion=dashboard&desde=${fechaLocalISO(desde)}&hasta=${fechaLocalISO(hasta)}&token=${currentToken}`);
     const data = await res.json();
     if (data.status === 'ok') {
-      document.getElementById('statIncidencias').textContent = (data.fuera_sucursal || 0) + (data.retardos || 0);
+      renderAnalisis(data, dias);
+    } else {
+      toast('No hay datos para el período', 'warning');
     }
-  } catch (e) { console.error(e); }
-}
-
-function showTab(tabId, btn) {
-  document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  btn.classList.add('active');
-  if (tabId === 'empleados' && empleadosCache.length === 0) cargarEmpleados();
-  if (tabId === 'agregar-excepcion') {
-    if (empleadosCache.length === 0) cargarEmpleados();
-    else actualizarSelectEmpleados();
+  } catch (e) {
+    console.error(e);
+    toast('Error al cargar análisis', 'error');
   }
-  if (tabId === 'reportes') inicializarReportes();
 }
 
-// ================================================================
-//  REPORTES EXCEL (SheetJS)
-// ================================================================
+function renderAnalisis(data, dias) {
+  const serie = data.serie_diaria || data.serie || [];
+  const labels = serie.map(d => d.fecha?.substring(5) || '');
+  const valores = serie.map(d => d.presentes || 0);
+  
+  // Tendencia
+  destroyChart('tendencia');
+  const ctxT = document.getElementById('chartTendencia');
+  if (ctxT) {
+    charts.tendencia = new Chart(ctxT, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Presentes',
+          data: valores,
+          borderColor: '#1a237e',
+          backgroundColor: 'rgba(26,35,126,.1)',
+          fill: true,
+          tension: .35,
+          pointRadius: 3
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+  
+  // Horarios (distribución de horas de entrada)
+  const registros = data.registros || [];
+  const horarios = {};
+  for (let h = 5; h <= 22; h++) horarios[`${String(h).padStart(2,'0')}:00`] = 0;
+  registros.filter(r => r.tipo === 'entrada' && r.hora).forEach(r => {
+    const h = parseInt(r.hora.split(':')[0]);
+    const key = `${String(h).padStart(2,'0')}:00`;
+    if (horarios[key] !== undefined) horarios[key]++;
+  });
+  
+  destroyChart('horarios');
+  const ctxH = document.getElementById('chartHorarios');
+  if (ctxH) {
+    charts.horarios = new Chart(ctxH, {
+      type: 'line',
+      data: {
+        labels: Object.keys(horarios),
+        datasets: [{
+          label: 'Entradas',
+          data: Object.values(horarios),
+          borderColor: '#1976d2',
+          backgroundColor: 'rgba(25,118,210,.15)',
+          fill: true,
+          tension: .35
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+  
+  // Sucursales
+  const porSucursal = {};
+  registros.forEach(r => {
+    const s = r.sucursal || 'Sin sucursal';
+    if (!porSucursal[s]) porSucursal[s] = 0;
+    if (r.tipo === 'entrada') porSucursal[s]++;
+  });
+  
+  destroyChart('sucursales');
+  const ctxS = document.getElementById('chartSucursales');
+  if (ctxS) {
+    charts.sucursales = new Chart(ctxS, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(porSucursal),
+        datasets: [{
+          data: Object.values(porSucursal),
+          backgroundColor: ['#1a237e','#3949ab','#5c6bc0','#7986cb','#9fa8da','#c5cae9']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+  
+  // Ausentismo por día de semana
+  const porDia = [0,0,0,0,0,0,0];
+  const conteoDia = [0,0,0,0,0,0,0];
+  serie.forEach(s => {
+    if (!s.fecha) return;
+    const d = new Date(s.fecha + 'T12:00:00').getDay();
+    porDia[d] += (s.ausentes || 0);
+    conteoDia[d]++;
+  });
+  const promedioAus = porDia.map((v,i) => conteoDia[i] ? Math.round(v/conteoDia[i]) : 0);
+  
+  destroyChart('ausentismo');
+  const ctxA = document.getElementById('chartAusentismo');
+  if (ctxA) {
+    charts.ausentismo = new Chart(ctxA, {
+      type: 'bar',
+      data: {
+        labels: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
+        datasets: [{
+          label: 'Promedio de ausencias',
+          data: promedioAus,
+          backgroundColor: 'rgba(211,47,47,.7)',
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+  
+  // Tabla departamentos
+  const porDep = {};
+  empleadosCache.forEach(e => {
+    const d = e.departamento || 'Sin dep.';
+    if (!porDep[d]) porDep[d] = { empleados: 0, retardos: 0, faltas: 0, excepciones: 0, asistencia: 0 };
+    porDep[d].empleados++;
+  });
+  registros.forEach(r => {
+    const emp = empleadosCache.find(e => e.id === r.empleado_id);
+    const d = emp?.departamento || 'Sin dep.';
+    if (!porDep[d]) porDep[d] = { empleados: 0, retardos: 0, faltas: 0, excepciones: 0, asistencia: 0 };
+    if (r.puntual === false) porDep[d].retardos++;
+    if (r.tipo === 'entrada') porDep[d].asistencia++;
+  });
+  
+  const tbody = document.querySelector('#tablaDepartamentos tbody');
+  if (tbody) {
+    const rows = Object.entries(porDep).map(([dep, info]) => {
+      const tasa = info.empleados > 0 ? Math.round((info.asistencia / (info.empleados * dias)) * 100) : 0;
+      return `<tr>
+        <td><b>${dep}</b></td>
+        <td>${info.empleados}</td>
+        <td>${tasa}%</td>
+        <td>${info.retardos}</td>
+        <td>${info.faltas}</td>
+        <td>${info.excepciones}</td>
+      </tr>`;
+    }).join('');
+    tbody.innerHTML = rows || '<tr><td colspan="6" class="empty-state">Sin datos</td></tr>';
+  }
+}
 
-let empleadosReporteCache = [];
+// ============================================================
+// DÍAS INHÁBILES
+// ============================================================
+async function cargarDiasInhabilies() {
+  const anio = document.getElementById('inhabilAnio')?.value || new Date().getFullYear();
+  try {
+    const res = await fetch(`${API_URL}?accion=dias_inhabilies&anio=${anio}&token=${currentToken}`);
+    const data = await res.json();
+    diasInhabiliesCache = data.dias || [];
+    renderCalendarioInhabilies();
+    renderTablaInhabilies();
+  } catch (e) {
+    console.error(e);
+    diasInhabiliesCache = [];
+    renderCalendarioInhabilies();
+    renderTablaInhabilies();
+  }
+}
 
-function inicializarReportes() {
-  empleadosReporteCache = empleadosCache || [];
-  renderListaEmpleadosReporte(empleadosReporteCache);
-
+function renderCalendarioInhabilies() {
+  const anio = parseInt(document.getElementById('inhabilAnio')?.value || new Date().getFullYear());
+  const mes = parseInt(document.getElementById('inhabilMes')?.value || new Date().getMonth());
+  const cont = document.getElementById('calendarioInhabilies');
+  if (!cont) return;
+  
+  const primerDia = new Date(anio, mes, 1).getDay();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
   const hoy = new Date();
-  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const defDesde = fechaLocalISO(inicioMes);
-  const defHasta = fechaLocalISO(hoy);
-
-  if (!document.getElementById('repGenDesde').value) {
-    document.getElementById('repGenDesde').value = defDesde;
-    document.getElementById('repGenHasta').value = defHasta;
+  
+  let html = '';
+  for (let i = 0; i < primerDia; i++) html += `<div class="dia-cal vacio"></div>`;
+  
+  for (let d = 1; d <= diasEnMes; d++) {
+    const fecha = new Date(anio, mes, d);
+    const fechaStr = fechaLocalISO(fecha);
+    const inhabil = diasInhabiliesCache.find(x => x.fecha === fechaStr);
+    const esHoy = fecha.toDateString() === hoy.toDateString();
+    html += `<div class="dia-cal ${inhabil ? 'inhabil' : ''} ${esHoy ? 'hoy' : ''}" 
+                  onclick="abrirModalInhabil('${fechaStr}')">
+      <div class="num">${d}</div>
+      ${inhabil ? `<div class="label">${inhabil.nombre}</div>` : ''}
+    </div>`;
   }
-  if (!document.getElementById('repEmpDesde').value) {
-    document.getElementById('repEmpDesde').value = defDesde;
-    document.getElementById('repEmpHasta').value = defHasta;
-  }
+  
+  cont.innerHTML = html;
 }
 
-function renderListaEmpleadosReporte(lista) {
-  const cont = document.getElementById('repEmpLista');
-  if (!lista || lista.length === 0) {
-    cont.innerHTML = '<div style="color:#888; font-size:13px; padding:10px;">Sin empleados</div>';
+function renderTablaInhabilies() {
+  const tbody = document.querySelector('#tablaInhabilies tbody');
+  if (!tbody) return;
+  if (diasInhabiliesCache.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Sin días inhábiles configurados</td></tr>';
     return;
   }
-  cont.innerHTML = lista.map(emp => `
-    <label>
-      <input type="checkbox" class="rep-emp-check" value="${emp.id}" data-nombre="${String(emp.nombre).replace(/"/g,'&quot;')}">
-      <span><b>${emp.id}</b> - ${emp.nombre} <span style="color:#888;">(${emp.departamento})</span></span>
+  tbody.innerHTML = diasInhabiliesCache.map(d => `
+    <tr>
+      <td><b>${d.fecha}</b></td>
+      <td>${d.nombre}</td>
+      <td><span class="badge badge-info">${d.tipo || '—'}</span></td>
+      <td>${d.sucursales || 'Todas'}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="eliminarDiaInhabil('${d.fecha}')">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function abrirModalInhabil(fecha = null) {
+  document.getElementById('modalInhabilTitulo').textContent = '🚫 Agregar Día Inhábil';
+  document.getElementById('inhabilIdSistema').value = '';
+  document.getElementById('inhabilFecha').value = fecha || fechaLocalISO(new Date());
+  document.getElementById('inhabilTipo').value = 'OFICIAL';
+  document.getElementById('inhabilNombre').value = '';
+  document.getElementById('inhabilNotas').value = '';
+  
+  const sel = document.getElementById('inhabilSucursales');
+  if (sel) {
+    sel.innerHTML = '<option value="*">Todas las sucursales</option>' + 
+      sucursalesCache.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+  }
+  
+  document.getElementById('modalInhabil').classList.add('show');
+}
+
+function cerrarModalInhabil() {
+  document.getElementById('modalInhabil').classList.remove('show');
+  document.getElementById('formInhabil').reset();
+}
+
+async function guardarDiaInhabil(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnGuardarInhabil');
+  setLoading(btn, true);
+  
+  const sel = document.getElementById('inhabilSucursales');
+  const sucursales = Array.from(sel.selectedOptions).map(o => o.value).join(',');
+  
+  const data = {
+    token: currentToken,
+    accion: 'crear_dia_inhabil',
+    fecha: document.getElementById('inhabilFecha').value,
+    tipo: document.getElementById('inhabilTipo').value,
+    nombre: document.getElementById('inhabilNombre').value.trim(),
+    sucursales: sucursales || '*',
+    notas: document.getElementById('inhabilNotas').value.trim(),
+    creado_por: currentEmpresa.admin
+  };
+  
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.status === 'ok') {
+      toast('Día inhábil guardado', 'success');
+      cerrarModalInhabil();
+      cargarDiasInhabilies();
+    } else {
+      toast('Error: ' + result.mensaje, 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión', 'error');
+  } finally {
+    setLoading(btn, false, '💾 Guardar');
+  }
+}
+
+async function eliminarDiaInhabil(fecha) {
+  if (!confirm('¿Eliminar este día inhábil?')) return;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({token: currentToken, accion: 'eliminar_dia_inhabil', fecha, usuario: currentEmpresa.admin})
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast('Día inhábil eliminado', 'success');
+      cargarDiasInhabilies();
+    } else {
+      toast('Error: ' + data.mensaje, 'error');
+    }
+  } catch (e) { toast('Error de conexión', 'error'); }
+}
+
+// ============================================================
+// REPORTES
+// ============================================================
+function inicializarReportes() {
+  const hoy = fechaLocalISO(new Date());
+  if (!document.getElementById('repGenDesde').value) document.getElementById('repGenDesde').value = hoy;
+  if (!document.getElementById('repGenHasta').value) document.getElementById('repGenHasta').value = hoy;
+  if (!document.getElementById('repEmpDesde').value) document.getElementById('repEmpDesde').value = hoy;
+  if (!document.getElementById('repEmpHasta').value) document.getElementById('repEmpHasta').value = hoy;
+  renderListaEmpleadosReporte();
+}
+
+function setRangoRapido(tipo, rango) {
+  const hoy = new Date();
+  let desde = new Date(), hasta = new Date();
+  
+  if (rango === 'hoy') { desde = hoy; hasta = hoy; }
+  else if (rango === 'semana') {
+    const d = hoy.getDay();
+    const off = d === 0 ? -6 : 1 - d;
+    desde = new Date(hoy); desde.setDate(hoy.getDate() + off);
+    hasta = new Date(desde); hasta.setDate(desde.getDate() + 6);
+  } else if (rango === 'mes') {
+    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  } else if (rango === 'mesAnterior') {
+    desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+  }
+  
+  const pre = tipo === 'rep' ? 'repGen' : 'repEmp';
+  document.getElementById(pre + 'Desde').value = fechaLocalISO(desde);
+  document.getElementById(pre + 'Hasta').value = fechaLocalISO(hasta);
+}
+
+function renderListaEmpleadosReporte() {
+  const cont = document.getElementById('repEmpLista');
+  if (!cont) return;
+  if (empleadosCache.length === 0) {
+    cont.innerHTML = '<div style="color:#888; font-size:13px;">No hay empleados cargados</div>';
+    return;
+  }
+  cont.innerHTML = empleadosCache.map(e => `
+    <label style="display:flex; align-items:center; gap:8px; padding:6px; border-radius:4px; cursor:pointer; font-size:13px;">
+      <input type="checkbox" class="rep-emp-check" value="${e.id}">
+      <span><b>${e.id}</b> - ${e.nombre} <small style="color:#888">(${e.departamento})</small></span>
     </label>
   `).join('');
 }
 
 function filtrarListaEmpleadosReporte() {
   const q = document.getElementById('repEmpBuscar').value.toLowerCase().trim();
-  if (!q) { renderListaEmpleadosReporte(empleadosReporteCache); return; }
-  const filtrados = empleadosReporteCache.filter(e =>
-    (e.nombre || '').toLowerCase().includes(q) ||
-    (e.id || '').toLowerCase().includes(q) ||
-    (e.departamento || '').toLowerCase().includes(q)
-  );
-  renderListaEmpleadosReporte(filtrados);
+  const items = document.querySelectorAll('#repEmpLista label');
+  items.forEach(item => {
+    const texto = item.textContent.toLowerCase();
+    item.style.display = texto.includes(q) ? 'flex' : 'none';
+  });
 }
 
 function toggleTodosEmpleadosReporte() {
@@ -1196,502 +2254,115 @@ function toggleTodosEmpleadosReporte() {
   checks.forEach(c => c.checked = !todos);
 }
 
-function setRangoRapido(prefix, tipo) {
-  const hoy = new Date();
-  let desde, hasta;
-  switch (tipo) {
-    case 'hoy':
-      desde = hasta = fechaLocalISO(hoy);
-      break;
-    case 'semana': {
-      const d = new Date(hoy);
-      const dow = d.getDay();
-      const off = dow === 0 ? -6 : 1 - dow;
-      const lunes = new Date(d); lunes.setDate(d.getDate() + off);
-      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
-      desde = fechaLocalISO(lunes);
-      hasta = fechaLocalISO(domingo);
-      break;
-    }
-    case 'mes': {
-      const ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-      const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-      desde = fechaLocalISO(ini);
-      hasta = fechaLocalISO(fin);
-      break;
-    }
-    case 'mesAnterior': {
-      const ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-      const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
-      desde = fechaLocalISO(ini);
-      hasta = fechaLocalISO(fin);
-      break;
-    }
-  }
-  if (prefix === 'rep') {
-    document.getElementById('repGenDesde').value = desde;
-    document.getElementById('repGenHasta').value = hasta;
-  } else {
-    document.getElementById('repEmpDesde').value = desde;
-    document.getElementById('repEmpHasta').value = hasta;
-  }
-}
-
 async function descargarReporteGeneral() {
-  const btn = document.getElementById('btnRepGeneral');
   const desde = document.getElementById('repGenDesde').value;
   const hasta = document.getElementById('repGenHasta').value;
-  const incluirRegistros = document.getElementById('repGenIncluirRegistros').checked;
-  const incluirExcepciones = document.getElementById('repGenIncluirExcepciones').checked;
-  const soloIncidencias = document.getElementById('repGenSoloIncidencias').checked;
-
-  if (!desde || !hasta) { toast('Selecciona el rango de fechas', 'error'); return; }
-  if (desde > hasta) { toast('La fecha inicial no puede ser mayor a la final', 'error'); return; }
-
+  if (!desde || !hasta) { toast('Selecciona fechas', 'error'); return; }
+  
+  const btn = document.getElementById('btnRepGeneral');
   setLoading(btn, true);
-
+  
   try {
-    const resConc = await fetch(`${API_URL}?accion=concentrado&desde=${desde}&hasta=${hasta}&token=${currentToken}`);
-    const dataConc = await resConc.json();
-    if (dataConc.status !== 'ok') {
-      toast('Error al obtener datos: ' + (dataConc.mensaje || ''), 'error');
-      return;
+    const res = await fetch(`${API_URL}?accion=reporte_general&desde=${desde}&hasta=${hasta}&token=${currentToken}`);
+    const data = await res.json();
+    
+    if (data.status === 'ok') {
+      generarExcelGeneral(data, desde, hasta);
+      toast('Reporte descargado', 'success');
+    } else {
+      toast('Error: ' + (data.mensaje || 'No se pudo generar'), 'error');
     }
-
-    let excepciones = [];
-    if (incluirExcepciones) {
-      try {
-        const resExc = await fetch(`${API_URL}?accion=excepciones&token=${currentToken}`);
-        const dataExc = await resExc.json();
-        if (dataExc.status === 'ok') {
-          excepciones = (dataExc.excepciones || []).filter(e => {
-            const fi = e.fecha_inicio, ff = e.fecha_fin || e.fecha_inicio;
-            return !(ff < desde || fi > hasta);
-          });
-        }
-      } catch (e) { console.warn('No se pudieron traer excepciones:', e); }
-    }
-
-    let registrosDetallados = [];
-    if (incluirRegistros) {
-      const empleadosConDatos = (dataConc.empleados || []).map(e => e.id);
-      const promesas = empleadosConDatos.map(id =>
-        fetch(`${API_URL}?accion=consultar&empleado_id=${encodeURIComponent(id)}&desde=${desde}&hasta=${hasta}&token=${currentToken}`)
-          .then(r => r.json())
-          .catch(() => ({ registros: [] }))
-      );
-      const resultados = await Promise.all(promesas);
-      resultados.forEach(r => {
-        if (r && r.registros) registrosDetallados = registrosDetallados.concat(r.registros);
-      });
-    }
-
-    const wb = XLSX.utils.book_new();
-
-    let empleadosFuente = dataConc.empleados || [];
-    if (soloIncidencias) {
-      empleadosFuente = empleadosFuente.filter(e =>
-        (e.fuera_horario || 0) + (e.fuera_ubicacion || 0) > 0
-      );
-    }
-
-    const filasResumen = empleadosFuente.map(e => ({
-      'ID Empleado': e.id,
-      'Nombre': e.nombre,
-      'Departamento': e.departamento,
-      'Sucursal': e.sucursal_id,
-      'Turno': e.turno_id,
-      'Días trabajados': e.dias_trabajados || 0,
-      'Horas totales': e.horas_totales || 0,
-      'Horas extra': e.horas_extra || 0,
-      'Entradas': e.entradas || 0,
-      'Salidas': e.salidas || 0,
-      'Retardos': e.fuera_horario || 0,
-      'Fuera de ubicación': e.fuera_ubicacion || 0,
-      'Excepciones': e.excepciones || 0,
-      'Incidencias totales': (e.fuera_horario || 0) + (e.fuera_ubicacion || 0)
-    }));
-
-    if (filasResumen.length > 0) {
-      const tot = {
-        'ID Empleado': 'TOTAL',
-        'Nombre': `${filasResumen.length} empleados`,
-        'Departamento': '',
-        'Sucursal': '',
-        'Turno': '',
-        'Días trabajados': filasResumen.reduce((a, r) => a + r['Días trabajados'], 0),
-        'Horas totales': Math.round(filasResumen.reduce((a, r) => a + r['Horas totales'], 0) * 10) / 10,
-        'Horas extra': Math.round(filasResumen.reduce((a, r) => a + r['Horas extra'], 0) * 10) / 10,
-        'Entradas': filasResumen.reduce((a, r) => a + r.Entradas, 0),
-        'Salidas': filasResumen.reduce((a, r) => a + r.Salidas, 0),
-        'Retardos': filasResumen.reduce((a, r) => a + r.Retardos, 0),
-        'Fuera de ubicación': filasResumen.reduce((a, r) => a + r['Fuera de ubicación'], 0),
-        'Excepciones': filasResumen.reduce((a, r) => a + r.Excepciones, 0),
-        'Incidencias totales': filasResumen.reduce((a, r) => a + r['Incidencias totales'], 0)
-      };
-      filasResumen.push(tot);
-    }
-
-    const wsResumen = XLSX.utils.json_to_sheet(filasResumen);
-    wsResumen['!cols'] = [
-      { wch: 12 }, { wch: 25 }, { wch: 18 }, { wch: 10 }, { wch: 10 },
-      { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
-      { wch: 10 }, { wch: 18 }, { wch: 12 }, { wch: 18 }
-    ];
-    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
-
-    if (incluirRegistros && registrosDetallados.length > 0) {
-      const filasDetalle = registrosDetallados.map(r => ({
-        'Fecha': r.fecha,
-        'Hora': r.hora,
-        'Empleado ID': r.empleado_id,
-        'Nombre': r.nombre,
-        'Departamento': r.departamento,
-        'Sucursal': r.sucursal,
-        'Turno': r.turno,
-        'Tipo': r.tipo,
-        'Dentro de sucursal': r.dentro_sucursal,
-        'Fuera de horario': r.fuera_horario || '',
-        'Detalle horario': r.detalle_horario || '',
-        'Ubicación GPS': r.ubicacion_texto || ''
-      }));
-      filasDetalle.sort((a, b) => (a.Fecha + a['Empleado ID']).localeCompare(b.Fecha + b['Empleado ID']));
-      const wsDetalle = XLSX.utils.json_to_sheet(filasDetalle);
-      wsDetalle['!cols'] = [
-        { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 25 }, { wch: 18 },
-        { wch: 22 }, { wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 14 },
-        { wch: 35 }, { wch: 22 }
-      ];
-      XLSX.utils.book_append_sheet(wb, wsDetalle, 'Registros');
-    }
-
-    if (incluirExcepciones && excepciones.length > 0) {
-      const filasExc = excepciones.map(e => ({
-        'ID': e.id,
-        'Tipo': e.tipo,
-        'Empleado ID': e.empleado_id,
-        'Empleado': e.empleado_nombre,
-        'Sucursal': e.sucursal_id,
-        'Turno': e.turno_id,
-        'Fecha inicio': e.fecha_inicio,
-        'Fecha fin': e.fecha_fin,
-        'Hora inicio': e.hora_inicio || '',
-        'Hora fin': e.hora_fin || '',
-        'Motivo': e.motivo,
-        'Estado': e.estado,
-        'Aprobado por': e.aprobado_por || '',
-        'Fecha solicitud': e.fecha_solicitud || '',
-        'Fecha resolución': e.fecha_resolucion || '',
-        'Observaciones': e.observaciones || ''
-      }));
-      const wsExc = XLSX.utils.json_to_sheet(filasExc);
-      wsExc['!cols'] = [
-        { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 10 },
-        { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
-        { wch: 30 }, { wch: 10 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 30 }
-      ];
-      XLSX.utils.book_append_sheet(wb, wsExc, 'Excepciones');
-    }
-
-    const infoEmpresa = [
-      { 'Campo': 'Empresa', 'Valor': currentEmpresa.nombre },
-      { 'Campo': 'ID Empresa', 'Valor': currentEmpresa.id },
-      { 'Campo': 'Administrador', 'Valor': currentEmpresa.admin },
-      { 'Campo': 'Periodo desde', 'Valor': desde },
-      { 'Campo': 'Periodo hasta', 'Valor': hasta },
-      { 'Campo': 'Generado', 'Valor': new Date().toLocaleString('es-MX') },
-      { 'Campo': 'Total empleados', 'Valor': empleadosFuente.length },
-      { 'Campo': 'Total incidencias', 'Valor': filasResumen.length > 0 ? filasResumen[filasResumen.length - 1]['Incidencias totales'] : 0 }
-    ];
-    const wsInfo = XLSX.utils.json_to_sheet(infoEmpresa);
-    wsInfo['!cols'] = [{ wch: 20 }, { wch: 40 }];
-    XLSX.utils.book_append_sheet(wb, wsInfo, 'Info');
-
-    const nombreArchivo = `Reporte_General_${currentEmpresa.id}_${desde}_a_${hasta}.xlsx`;
-    XLSX.writeFile(wb, nombreArchivo);
-    toast('✅ Reporte generado correctamente', 'success');
-  } catch (err) {
-    console.error(err);
-    toast('❌ Error al generar el reporte: ' + err.message, 'error');
+  } catch (e) {
+    console.error(e);
+    toast('Error al generar reporte', 'error');
   } finally {
     setLoading(btn, false, '📥 Descargar Reporte General');
   }
 }
 
+function generarExcelGeneral(data, desde, hasta) {
+  const wb = XLSX.utils.book_new();
+  
+  const resumen = data.resumen || data.empleados || [];
+  const wsResumen = XLSX.utils.json_to_sheet(resumen.map(r => ({
+    'ID': r.id,
+    'Nombre': r.nombre,
+    'Departamento': r.departamento,
+    'Sucursal': r.sucursal,
+    'Días Trabajados': r.dias_trabajados || 0,
+    'Horas Totales': r.horas_totales || 0,
+    'Retardos': r.retardos || 0,
+    'Faltas': r.faltas || 0,
+    'Excepciones': r.excepciones || 0,
+    'Cumplimiento %': r.cumplimiento || 0
+  })));
+  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+  
+  if (document.getElementById('repGenIncluirRegistros').checked && data.registros) {
+    const wsReg = XLSX.utils.json_to_sheet(data.registros);
+    XLSX.utils.book_append_sheet(wb, wsReg, 'Registros');
+  }
+  
+  if (document.getElementById('repGenIncluirExcepciones').checked && data.excepciones) {
+    const wsExc = XLSX.utils.json_to_sheet(data.excepciones);
+    XLSX.utils.book_append_sheet(wb, wsExc, 'Excepciones');
+  }
+  
+  XLSX.writeFile(wb, `Reporte_General_${desde}_${hasta}.xlsx`);
+}
+
 async function descargarReporteEmpleados() {
-  const btn = document.getElementById('btnRepEmpleado');
+  const checks = document.querySelectorAll('.rep-emp-check:checked');
+  const ids = Array.from(checks).map(c => c.value);
+  if (ids.length === 0) { toast('Selecciona al menos un empleado', 'error'); return; }
+  
   const desde = document.getElementById('repEmpDesde').value;
   const hasta = document.getElementById('repEmpHasta').value;
-
-  if (!desde || !hasta) { toast('Selecciona el rango de fechas', 'error'); return; }
-  if (desde > hasta) { toast('La fecha inicial no puede ser mayor a la final', 'error'); return; }
-
-  const checks = document.querySelectorAll('.rep-emp-check:checked');
-  if (checks.length === 0) { toast('Selecciona al menos un empleado', 'error'); return; }
-
-  const seleccionados = Array.from(checks).map(c => ({
-    id: c.value,
-    nombre: c.dataset.nombre
-  }));
-
+  if (!desde || !hasta) { toast('Selecciona fechas', 'error'); return; }
+  
+  const btn = document.getElementById('btnRepEmpleado');
   setLoading(btn, true);
-
+  
   try {
-    const promesasReg = seleccionados.map(emp =>
-      fetch(`${API_URL}?accion=consultar&empleado_id=${encodeURIComponent(emp.id)}&desde=${desde}&hasta=${hasta}&token=${currentToken}`)
-        .then(r => r.json())
-        .then(d => ({ emp, registros: (d && d.registros) || [] }))
-        .catch(() => ({ emp, registros: [] }))
-    );
-
-    const promesasExc = seleccionados.map(emp =>
-      fetch(`${API_URL}?accion=excepciones&empleado_id=${encodeURIComponent(emp.id)}&token=${currentToken}`)
-        .then(r => r.json())
-        .then(d => ({ emp, excepciones: (d && d.excepciones) || [] }))
-        .catch(() => ({ emp, excepciones: [] }))
-    );
-
-    const [resRegistros, resExcepciones] = await Promise.all([
-      Promise.all(promesasReg),
-      Promise.all(promesasExc)
-    ]);
-
-    const excPorEmp = {};
-    resExcepciones.forEach(r => {
-      const filtradas = (r.excepciones || []).filter(e => {
-        const fi = e.fecha_inicio, ff = e.fecha_fin || e.fecha_inicio;
-        return !(ff < desde || fi > hasta);
-      });
-      excPorEmp[r.emp.id] = filtradas;
+    const res = await fetch(API_URL, {
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({
+        token: currentToken, accion: 'reporte_empleados',
+        empleados: ids, desde, hasta
+      })
     });
-
-    const wb = XLSX.utils.book_new();
-
-    const filasResumen = resRegistros.map(({ emp, registros }) => {
-      const stats = calcularStatsEmpleado(registros, emp.id, desde, hasta);
-      return {
-        'ID': emp.id,
-        'Nombre': emp.nombre,
-        'Días trabajados': stats.diasTrabajados,
-        'Horas trabajadas': stats.horas,
-        'Horas extra': stats.horasExtra,
-        'Entradas': stats.entradas,
-        'Salidas': stats.salidas,
-        'Retardos': stats.retardos,
-        'Fuera de ubicación': stats.fueraUbicacion,
-        'Cumplimiento %': stats.cumplimiento
-      };
-    });
-    if (filasResumen.length > 0) {
-      filasResumen.push({
-        'ID': 'TOTAL',
-        'Nombre': `${filasResumen.length} empleado(s)`,
-        'Días trabajados': filasResumen.reduce((a, r) => a + r['Días trabajados'], 0),
-        'Horas trabajadas': '',
-        'Horas extra': '',
-        'Entradas': filasResumen.reduce((a, r) => a + r.Entradas, 0),
-        'Salidas': filasResumen.reduce((a, r) => a + r.Salidas, 0),
-        'Retardos': filasResumen.reduce((a, r) => a + r.Retardos, 0),
-        'Fuera de ubicación': filasResumen.reduce((a, r) => a + r['Fuera de ubicación'], 0),
-        'Cumplimiento %': ''
-      });
+    const data = await res.json();
+    
+    if (data.status === 'ok') {
+      generarExcelEmpleados(data, desde, hasta);
+      toast('Reporte descargado', 'success');
+    } else {
+      toast('Error: ' + (data.mensaje || 'No se pudo generar'), 'error');
     }
-    const wsResumen = XLSX.utils.json_to_sheet(filasResumen);
-    wsResumen['!cols'] = [
-      { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 12 },
-      { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 18 }, { wch: 14 }
-    ];
-    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
-
-    resRegistros.forEach(({ emp, registros }) => {
-      const nombreHoja = sanitizarNombreHoja(`${emp.id}`);
-      const filas = registros.map(r => ({
-        'Fecha': r.fecha,
-        'Hora': r.hora,
-        'Tipo': r.tipo,
-        'Sucursal': r.sucursal,
-        'Turno': r.turno,
-        'Dentro de sucursal': r.dentro_sucursal,
-        'Fuera de horario': r.fuera_horario || '',
-        'Detalle horario': r.detalle_horario || '',
-        'Ubicación GPS': r.ubicacion_texto || ''
-      })).sort((a, b) => (a.Fecha + a.Hora).localeCompare(b.Fecha + b.Hora));
-
-      const header = [
-        [`Empleado: ${emp.nombre}`],
-        [`ID: ${emp.id}`],
-        [`Periodo: ${desde} a ${hasta}`],
-        []
-      ];
-      const ws = XLSX.utils.aoa_to_sheet(header);
-      XLSX.utils.sheet_add_json(ws, filas, { origin: -1 });
-
-      const stats = calcularStatsEmpleado(registros, emp.id, desde, hasta);
-      const resumenFinal = [
-        [],
-        ['RESUMEN DEL PERIODO'],
-        ['Días trabajados', stats.diasTrabajados],
-        ['Horas trabajadas', stats.horas],
-        ['Horas extra', stats.horasExtra],
-        ['Entradas', stats.entradas],
-        ['Salidas', stats.salidas],
-        ['Retardos', stats.retardos],
-        ['Fuera de ubicación', stats.fueraUbicacion],
-        ['Cumplimiento %', stats.cumplimiento + '%']
-      ];
-      XLSX.utils.sheet_add_aoa(ws, resumenFinal, { origin: -1 });
-
-      ws['!cols'] = [
-        { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 22 }, { wch: 14 },
-        { wch: 16 }, { wch: 14 }, { wch: 35 }, { wch: 22 }
-      ];
-
-      let nombreFinal = nombreHoja;
-      let contador = 1;
-      while (wb.SheetNames.includes(nombreFinal)) {
-        nombreFinal = `${nombreHoja}_${contador++}`;
-      }
-      XLSX.utils.book_append_sheet(wb, ws, nombreFinal);
-    });
-
-    const todasExcepciones = [];
-    Object.entries(excPorEmp).forEach(([empId, exs]) => {
-      exs.forEach(e => todasExcepciones.push({ empId, ...e }));
-    });
-    if (todasExcepciones.length > 0) {
-      const filasExc = todasExcepciones.map(e => ({
-        'Empleado ID': e.empleado_id,
-        'Empleado': e.empleado_nombre,
-        'Tipo': e.tipo,
-        'Fecha inicio': e.fecha_inicio,
-        'Fecha fin': e.fecha_fin,
-        'Hora inicio': e.hora_inicio || '',
-        'Hora fin': e.hora_fin || '',
-        'Motivo': e.motivo,
-        'Estado': e.estado,
-        'Aprobado por': e.aprobado_por || '',
-        'Observaciones': e.observaciones || ''
-      }));
-      const wsExc = XLSX.utils.json_to_sheet(filasExc);
-      wsExc['!cols'] = [
-        { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-        { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 10 }, { wch: 22 }, { wch: 30 }
-      ];
-      XLSX.utils.book_append_sheet(wb, wsExc, 'Excepciones');
-    }
-
-    const info = [
-      { 'Campo': 'Empresa', 'Valor': currentEmpresa.nombre },
-      { 'Campo': 'ID Empresa', 'Valor': currentEmpresa.id },
-      { 'Campo': 'Administrador', 'Valor': currentEmpresa.admin },
-      { 'Campo': 'Periodo desde', 'Valor': desde },
-      { 'Campo': 'Periodo hasta', 'Valor': hasta },
-      { 'Campo': 'Empleados incluidos', 'Valor': seleccionados.length },
-      { 'Campo': 'Generado', 'Valor': new Date().toLocaleString('es-MX') }
-    ];
-    const wsInfo = XLSX.utils.json_to_sheet(info);
-    wsInfo['!cols'] = [{ wch: 20 }, { wch: 40 }];
-    XLSX.utils.book_append_sheet(wb, wsInfo, 'Info');
-
-    const sufijo = seleccionados.length === 1 ? `_${seleccionados[0].id}` : `_${seleccionados.length}emps`;
-    const nombreArchivo = `Reporte_Empleados_${currentEmpresa.id}${sufijo}_${desde}_a_${hasta}.xlsx`;
-    XLSX.writeFile(wb, nombreArchivo);
-    toast('✅ Reporte generado correctamente', 'success');
-  } catch (err) {
-    console.error(err);
-    toast('❌ Error al generar el reporte: ' + err.message, 'error');
+  } catch (e) {
+    console.error(e);
+    toast('Error al generar reporte', 'error');
   } finally {
     setLoading(btn, false, '📥 Descargar Reporte por Empleado');
   }
 }
 
-function calcularStatsEmpleado(registros, empId, desde, hasta) {
-  const entradas = registros.filter(r => r.tipo === 'entrada');
-  const salidas = registros.filter(r => r.tipo === 'salida');
-  const retardos = entradas.filter(r => {
-    const v = r.fuera_horario;
-    return v === true || v === 'SI' || v === 'si' || v === 1;
+function generarExcelEmpleados(data, desde, hasta) {
+  const wb = XLSX.utils.book_new();
+  const empleados = data.empleados || [];
+  
+  empleados.forEach(emp => {
+    const nombre = (emp.nombre || 'Empleado').substring(0, 25).replace(/[\\/*?:[\]]/g, '');
+    const registros = emp.registros || [];
+    const ws = XLSX.utils.json_to_sheet(registros);
+    XLSX.utils.book_append_sheet(wb, ws, nombre);
   });
-  const fueraUbicacion = registros.filter(r => {
-    const v = r.dentro_sucursal;
-    return v === false || v === 'NO' || (typeof v === 'string' && v.toUpperCase().startsWith('NO'));
-  });
-  const diasSet = new Set(entradas.map(r => r.fecha));
-
-  const porDia = {};
-  registros.forEach(r => {
-    if (!porDia[r.fecha]) porDia[r.fecha] = [];
-    porDia[r.fecha].push(r);
-  });
-  let totalMin = 0;
-  Object.values(porDia).forEach(regs => {
-    regs.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-    let pendiente = null;
-    regs.forEach(r => {
-      if (r.tipo === 'entrada') pendiente = r.hora;
-      else if (r.tipo === 'salida' && pendiente) {
-        const en = timeToMinClient(pendiente);
-        const sa = timeToMinClient(r.hora);
-        let diff = sa - en;
-        if (diff < 0) diff += 1440;
-        if (diff > 0 && diff < 16 * 60) totalMin += diff;
-        pendiente = null;
-      }
-    });
-  });
-
-  const horas = Math.floor(totalMin / 60);
-  const minutos = totalMin % 60;
-
-  let extraMin = 0;
-  Object.values(porDia).forEach(regs => {
-    regs.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-    let pendiente = null, minutosDia = 0;
-    regs.forEach(r => {
-      if (r.tipo === 'entrada') pendiente = r.hora;
-      else if (r.tipo === 'salida' && pendiente) {
-        const en = timeToMinClient(pendiente);
-        const sa = timeToMinClient(r.hora);
-        let diff = sa - en;
-        if (diff < 0) diff += 1440;
-        if (diff > 0 && diff < 16 * 60) minutosDia += diff;
-        pendiente = null;
-      }
-    });
-    if (minutosDia > 8 * 60) extraMin += minutosDia - 8 * 60;
-  });
-
-  let diasLaborables = 0;
-  const dIni = new Date(desde + 'T00:00:00');
-  const dFin = new Date(hasta + 'T00:00:00');
-  for (let d = new Date(dIni); d <= dFin; d.setDate(d.getDate() + 1)) {
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) diasLaborables++;
+  
+  if (wb.SheetNames.length === 0) {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Sin datos']]), 'Reporte');
   }
-  const cumplimiento = diasLaborables > 0
-    ? Math.round((diasSet.size / diasLaborables) * 100)
-    : 0;
-
-  return {
-    diasTrabajados: diasSet.size,
-    horas: `${horas}h ${minutos}m`,
-    horasExtra: `${Math.floor(extraMin / 60)}h ${extraMin % 60}m`,
-    entradas: entradas.length,
-    salidas: salidas.length,
-    retardos: retardos.length,
-    fueraUbicacion: fueraUbicacion.length,
-    cumplimiento
-  };
-}
-
-function timeToMinClient(h) {
-  if (!h) return 0;
-  const p = String(h).split(':');
-  return parseInt(p[0]) * 60 + parseInt(p[1] || 0);
-}
-
-function sanitizarNombreHoja(nombre) {
-  return String(nombre).replace(/[:\\\/\?\*\[\]]/g, '_').substring(0, 31);
+  
+  XLSX.writeFile(wb, `Reporte_Empleados_${desde}_${hasta}.xlsx`);
 }
 </script>
 </body>

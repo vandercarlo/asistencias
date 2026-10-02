@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a237e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
+<title>Control de Asistencia</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root { --primary:#1a237e; --primary-light:#3949ab; --bg:#f0f2f5; --card:#fff; --text:#212121; --text-light:#757575; --success:#388e3c; --warning:#f57c00; --danger:#d32f2f; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+.login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); }
+.login-card { background:white; padding:30px; border-radius:20px; width:100%; max-width:350px; box-shadow:0 10px 30px rgba(0,0,0,0.2); text-align:center; animation:fadeInUp 0.5s ease-out; }
+.login-card h1 { font-size:3rem; margin-bottom:10px; }
+.login-card h2 { color:var(--primary); margin-bottom:8px; font-size:1.3rem; }
+.login-card .empresa-nombre { color:var(--text-light); font-size:0.9rem; margin-bottom:20px; font-weight:600; }
+.login-input { width:100%; padding:15px; border:2px solid #e0e0e0; border-radius:12px; font-size:1.2rem; text-align:center; margin-bottom:12px; outline:none; transition:border-color 0.2s, opacity 0.2s; font-family:inherit; }
+.login-input.numero { text-transform:uppercase; letter-spacing:2px; }
+.login-input.pin { letter-spacing:8px; font-size:1.4rem; }
+.login-input:focus { border-color:var(--primary); }
+.login-input.cargando { opacity:0.6; pointer-events:none; background:#f5f5f5; }
+.login-btn { width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; margin-top:10px; transition:transform 0.15s; }
+.login-btn:disabled { opacity:0.9; cursor:wait; }
+.login-btn.cargando { animation:pulseRing 1.8s infinite; }
+.error-msg { color:#c62828; font-size:0.85rem; margin-top:10px; display:none; }
+
+.app-container { display:none; padding-bottom:100px; animation:fadeIn 0.4s ease; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  padding: 15px 20px 25px;
+  text-align: center;
+  border-radius: 0 0 25px 25px;
+  position: relative;
+}
+
+.header-top {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 42px; /* reserva espacio para que el título no se mueva */
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+.header h1 { font-size:1.2rem; margin-bottom:4px; }
+.header .employee-name { font-size:1rem; font-weight:600; margin-bottom:4px; }
+.header .info-line { font-size:0.8rem; opacity:0.85; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:12px; display:inline-block; }
+.clock-display { font-size:2.6rem; font-weight:300; margin:8px 0 2px; font-variant-numeric:tabular-nums; }
+.date-display { font-size:0.85rem; opacity:0.9; }
+  .pin-btn {
+  position:absolute; top:15px; right:65px;
+  background:rgba(255,255,255,0.2); border:none; color:white;
+  width:42px; height:42px; border-radius:50%;
+  font-size:1.1rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.2s;
+}
+.pin-btn:hover { background:rgba(255,255,255,0.35); }
+.pin-btn:active { transform:scale(0.95); }
+.logout-btn { 
+  position:absolute; top:15px; right:15px; 
+  background:rgba(255,255,255,0.2); border:none; color:white; 
+  width:42px; height:42px; border-radius:50%; 
+  font-size:1.2rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.2s;
+}
+.logout-btn:hover { background:rgba(255,255,255,0.35); }
+.logout-btn:active { transform:scale(0.95); }
+.status-card { margin:-20px 15px 15px; background:var(--card); border-radius:16px; padding:18px; box-shadow:0 4px 15px rgba(0,0,0,0.1); position:relative; z-index:2; }
+.status-row { display:flex; justify-content:space-between; align-items:center; }
+.status-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:600; }
+.status-badge.fuera { background:#fce4ec; color:#c62828; }
+.status-badge.dentro { background:#e8f5e9; color:#2e7d32; }
+.status-dot { width:8px; height:8px; border-radius:50%; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.fuera .status-dot { background:#c62828; }
+.dentro .status-dot { background:#2e7d32; }
+.today-hours { font-size:0.85rem; color:var(--text-light); }
+.today-hours strong { color:var(--primary); font-size:1.1rem; font-variant-numeric:tabular-nums; }
+.today-hours strong.contando { color:#2e7d32; animation:pulseContador 1s infinite; }
+@keyframes pulseContador { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+.location-info { margin-top:10px; padding-top:10px; border-top:1px solid #eee; font-size:0.8rem; color:var(--text-light); }
+.location-info.ok { color:#2e7d32; font-weight:600; }
+.location-info.far { color:#c62828; font-weight:600; }
+.location-info.warn { color:#f57c00; font-weight:600; }
+
+.tabs { display:flex; margin:0 15px 10px; background:var(--card); border-radius:12px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+.tab { flex:1; padding:12px 4px; text-align:center; font-size:0.8rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--text-light); }
+.tab.active { background:var(--primary); color:#fff; }
+.tab-content { display:none; padding:0 15px; }
+.tab-content.active { display:block; }
+
+.buttons-container { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 15px; margin-bottom:20px; }
+.btn { border:none; border-radius:16px; padding:20px 10px; font-size:1rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+.btn:active { transform:scale(0.96); }
+.btn-entrada { background:linear-gradient(135deg,#00c853,#00e676); color:#fff; }
+.btn-salida { background:linear-gradient(135deg,#ff1744,#ff5252); color:#fff; }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-icon { font-size:1.8rem; }
+.btn-sub { font-size:0.7rem; font-weight:400; opacity:0.9; }
+
+.section-title { font-size:0.9rem; font-weight:700; color:var(--primary); margin:15px 0 10px; padding-bottom:6px; border-bottom:2px solid var(--primary); }
+.stats-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:20px; }
+.stat-box { background:var(--card); padding:15px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); text-align:center; }
+.stat-box .icon { font-size:2rem; margin-bottom:8px; }
+.stat-box .value { font-size:1.5rem; font-weight:700; color:var(--primary); margin-bottom:4px; }
+.stat-box .label { font-size:0.75rem; color:var(--text-light); }
+.stat-box.success .value { color:var(--success); }
+.stat-box.danger .value { color:var(--danger); }
+.stat-box.warning .value { color:var(--warning); }
+
+.btn-nueva-sol { width:100%; padding:14px; background:linear-gradient(135deg,#1976d2,#42a5f5); color:white; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+.record-card { background:var(--card); border-radius:12px; padding:14px 16px; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; align-items:center; gap:12px; }
+.record-thumb { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; }
+.record-info { flex:1; min-width:0; }
+.record-type { font-size:0.85rem; font-weight:600; }
+.record-meta { font-size:0.75rem; color:var(--text-light); margin-top:2px; }
+.record-motivo { font-size:0.75rem; color:var(--text-light); margin-top:4px; font-style:italic; }
+.record-estado { font-size:0.7rem; font-weight:700; margin-top:4px; }
+.estado-pendiente { color:#e65100; }
+.estado-aprobado { color:#2e7d32; }
+.estado-rechazado { color:#c62828; }
+.empty-state { text-align:center; padding:40px 20px; color:var(--text-light); }
+.empty-state .icon { font-size:3rem; margin-bottom:10px; }
+
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9998; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.show { display:flex !important; }
+.modal { background:white; border-radius:20px; padding:25px; width:100%; max-width:400px; max-height:90vh; overflow-y:auto; z-index:9999; position:relative; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+.modal h3 { margin-bottom:15px; color:var(--primary); }
+.modal label { font-size:0.8rem; color:var(--text-light); font-weight:600; display:block; margin-top:10px; }
+.modal input, .modal select, .modal textarea { width:100%; padding:10px 14px; border:2px solid #e0e0e0; border-radius:10px; font-size:0.95rem; margin-top:6px; outline:none; font-family:inherit; }
+.modal-buttons { display:flex; gap:10px; margin-top:18px; }
+.modal-buttons button { flex:1; padding:12px; border:none; border-radius:10px; font-weight:700; font-size:0.9rem; cursor:pointer; }
+.modal-cancel { background:#f5f5f5; color:var(--text-light); }
+.modal-confirm { background:var(--primary); color:#fff; }
+.modal-confirm:disabled { opacity:.6; cursor:not-allowed; }
+
+.toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px); background:#323232; color:#fff; padding:14px 24px; border-radius:12px; font-size:0.9rem; z-index:99999; transition:transform 0.3s ease; max-width:90%; text-align:center; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.success { background:#2e7d32; } .toast.error { background:#c62828; } .toast.warn { background:#e65100; }
+.spinner { display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:#fff; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-8px); opacity: 1; }
+}
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0.5); }
+  70% { box-shadow: 0 0 0 15px rgba(26, 35, 126, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(26, 35, 126, 0); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+.loading-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(26, 35, 126, 0.85);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 99999; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+  animation: fadeIn 0.3s ease;
+}
+.loading-overlay.show { display: flex; }
+.loading-overlay .big-spinner {
+  width: 70px; height: 70px;
+  border: 5px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+.loading-overlay .loading-text {
+  color: #fff; font-size: 1.05rem; font-weight: 600;
+  letter-spacing: 0.5px; animation: pulseContador 1.5s ease infinite;
+  text-align: center; padding: 0 20px;
+}
+.loading-overlay .loading-sub { color: rgba(255, 255, 255, 0.75); font-size: 0.85rem; }
+
+.loading-dots { display: none; justify-content: center; gap: 6px; margin-top: 15px; }
+.loading-dots.show { display: flex; animation: fadeIn 0.3s ease; }
+.loading-dots span {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--primary);
+  animation: dotBounce 1.4s infinite ease-in-out both;
+}
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots span:nth-child(3) { animation-delay: 0s; }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>⏱️</h1>
+    <h2>Control de Asistencia</h2>
+    <p style="color:var(--text-light); margin-bottom:20px; font-size:0.9rem;">Ingresa tu número y PIN</p>
+    <input type="text" class="login-input numero" id="inputEmpleadoId" placeholder="Número de empleado" autocomplete="off" onkeydown="if(event.key==='Enter') document.getElementById('inputPin').focus()">
+    <input type="tel" class="login-input pin" id="inputPin" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off" onkeydown="if(event.key==='Enter') iniciarSesion()">
+    <button class="login-btn" id="btnLogin" onclick="iniciarSesion()">
+      <span id="btnText">Ingresar</span>
+      <span class="spinner" id="btnSpinner" style="display:none;"></span>
+    </button>
+    <div class="loading-dots" id="loadingDots">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="error-msg" id="errorMsg">Datos incorrectos</div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="big-spinner"></div>
+  <div class="loading-text" id="loadingText">Validando credenciales...</div>
+  <div class="loading-sub">Un momento por favor</div>
+</div>
+
+<div class="app-container" id="appContainer">
+<div class="header">
+  <div class="header-top">
+    <div class="header-actions">
+      <button class="icon-btn" onclick="abrirModalCambiarPin()" aria-label="Cambiar PIN" title="Cambiar PIN">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <h1>⏱️ Control de Asistencia</h1>
+  <div class="employee-name" id="employeeNameDisplay">Cargando...</div>
+  <div class="info-line" id="infoLine">Cargando...</div>
+  <p class="date-display" id="dateDisplay"></p>
+  <div class="clock-display" id="clockDisplay">--:--:--</div>
+</div>
+
+  <div class="status-card">
+    <div class="status-row">
+      <div><span class="status-badge fuera" id="statusBadge"><span class="status-dot"></span><span id="statusText">Fuera del trabajo</span></span></div>
+      <div class="today-hours">Hoy: <strong id="todayHours">0h 0m</strong></div>
+    </div>
+    <div class="location-info" id="locationInfo">📍 Obteniendo ubicación...</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="cambiarTab('hoy', this)">📅 Hoy</button>
+    <button class="tab" onclick="cambiarTab('estadisticas', this)">📊 Estadísticas</button>
+    <button class="tab" onclick="cambiarTab('solicitudes', this)">📝 Solicitudes</button>
+  </div>
+
+  <div id="tab-hoy" class="tab-content active">
+    <div class="buttons-container">
+      <button class="btn btn-entrada" id="btnEntrada" onclick="registrar('entrada')">
+        <span class="btn-icon">🟢</span>ENTRADA
+        <span class="btn-sub" id="lastEntrada">Sin registrar</span>
+      </button>
+      <button class="btn btn-salida" id="btnSalida" onclick="registrar('salida')" disabled>
+        <span class="btn-icon">🔴</span>SALIDA
+        <span class="btn-sub" id="lastSalida">Sin registrar</span>
+      </button>
+    </div>
+    <div style="text-align:center; padding:20px; color:var(--text-light); font-size:0.85rem;">
+      <p>Si tienes algún problema con tu registro, acude a Recursos Humanos.</p>
+    </div>
+  </div>
+
+  <div id="tab-estadisticas" class="tab-content">
+    <div class="section-title">📊 Mis Estadísticas del Mes</div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="icon">⏱️</div><div class="value" id="statHoras">0h 0m</div><div class="label">Horas Trabajadas</div></div>
+      <div class="stat-box success"><div class="icon">📅</div><div class="value" id="statDias">0</div><div class="label">Días Trabajados</div></div>
+      <div class="stat-box danger"><div class="icon">⚠️</div><div class="value" id="statRetardos">0</div><div class="label">Retardos</div></div>
+      <div class="stat-box warning"><div class="icon">📍</div><div class="value" id="statFuera">0</div><div class="label">Fuera de Ubicación</div></div>
+      <div class="stat-box"><div class="icon">✅</div><div class="value" id="statPermisos">0</div><div class="label">Permisos Aprobados</div></div>
+      <div class="stat-box"><div class="icon">🏖️</div><div class="value" id="statVacaciones">0</div><div class="label">Días de Vacaciones</div></div>
+    </div>
+    <div class="section-title">📈 Progreso del Mes</div>
+    <div class="record-card">
+      <div class="record-info">
+        <div class="record-type">Cumplimiento de Asistencia</div>
+        <div class="record-meta" id="statCumplimiento">0% - 0 de 0 días</div>
+        <div style="background:#e0e0e0; border-radius:10px; height:10px; margin-top:8px; overflow:hidden;">
+          <div id="progressBar" style="height:100%; background:linear-gradient(90deg, #388e3c, #66bb6a); border-radius:10px; width:0%; transition:width 0.5s;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">📋 Resumen de Hoy</div>
+    <div class="record-card">
+      <div class="record-info">
+        <div class="record-type" id="hoyEntrada">Entrada: Sin registrar</div>
+        <div class="record-meta" id="hoySalida">Salida: Sin registrar</div>
+        <div class="record-meta" id="hoyHoras" style="margin-top:6px; font-weight:600; color:var(--primary);">Horas hoy: 0h 0m</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-solicitudes" class="tab-content">
+    <div class="section-title">📝 Mis Solicitudes</div>
+    <button class="btn-nueva-sol" onclick="abrirNuevaSolicitud()">➕ Nueva solicitud</button>
+    <div id="listaSolicitudes"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSolicitud">
+  <div class="modal">
+    <h3>📝 Nueva Solicitud</h3>
+    <label>Tipo de solicitud</label>
+    <select id="inputTipoSolicitud" onchange="toggleHorario()">
+      <option value="RETARDO">Retardo justificado</option>
+      <option value="FALTA_JUST">Falta justificada</option>
+      <option value="PERMISO">Permiso parcial</option>
+    </select>
+    <label>Fecha</label>
+    <input type="date" id="inputFechaSolicitud">
+    <div id="horarioPermiso" style="display:none;">
+      <label>Horario del permiso</label>
+      <div style="display:flex; gap:8px;">
+        <input type="time" id="inputHoraIni" style="flex:1;">
+        <input type="time" id="inputHoraFin" style="flex:1;">
+      </div>
+    </div>
+    <label>Motivo</label>
+    <textarea id="inputMotivo" rows="3" placeholder="Explica el motivo..."></textarea>
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="cerrarModalSolicitud()">Cancelar</button>
+      <button class="modal-confirm" id="btnEnviarSolicitud" onclick="enviarSolicitud()">Enviar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modalCambiarPin">
+  <div class="modal">
+    <h3>🔑 Cambiar PIN</h3>
+    <p style="color:#666; font-size:0.85rem; margin-bottom:15px;">
+      Tu PIN es personal. No lo compartas con nadie.
+    </p>
+    <label>PIN actual</label>
+    <input type="tel" id="pinActual" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <label>Nuevo PIN (4-6 dígitos)</label>
+    <input type="tel" id="pinNuevo" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <label>Confirmar nuevo PIN</label>
+    <input type="tel" id="pinConfirmar" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="cerrarModalCambiarPin()">Cancelar</button>
+      <button class="modal-confirm" id="btnCambiarPin" onclick="guardarNuevoPin()">Guardar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec';
+
+let SESSION_TOKEN = localStorage.getItem('session_token') || null;
+let empleado = JSON.parse(localStorage.getItem('empleado_actual') || 'null');
+let estadoActual = localStorage.getItem('estado_actual') || 'fuera';
+let ubicacionActual = null;
+let ubicacionEstado = 'pendiente';
+let misSolicitudes = [];
+let misRegistros = [];
+
+let contadorInterval = null;
+let horaEntradaActual = null;
+let minutosAcumuladosHoy = 0;
+
+// ================================================================
+//  UTILIDADES
+// ================================================================
+function fechaLocalISO(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function timeToMin(h) {
+  if (!h) return 0;
+  const p = String(h).split(':');
+  return parseInt(p[0]) * 60 + parseInt(p[1] || 0);
+}
+
+function showToast(msg, tipo = 'info') {
+  const t = document.getElementById('toast');
+  if (!t) { console.log('[TOAST ' + tipo + ']', msg); return; }
+  t.textContent = msg;
+  t.className = 'toast show ' + (tipo !== 'info' ? tipo : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+// ================================================================
+//  INIT
+// ================================================================
+function init() {
+  const fechaGuardada = localStorage.getItem('contador_fecha');
+  const hoyStr = fechaLocalISO();
+  if (fechaGuardada !== hoyStr) {
+    localStorage.removeItem('hora_entrada_actual');
+    localStorage.removeItem('minutos_acumulados_hoy');
+    localStorage.removeItem('estado_actual');
+    localStorage.removeItem('contador_fecha');
+    estadoActual = 'fuera';
+    horaEntradaActual = null;
+    minutosAcumuladosHoy = 0;
+  } else {
+    minutosAcumuladosHoy = parseInt(localStorage.getItem('minutos_acumulados_hoy') || '0');
+  }
+
+  if (empleado && SESSION_TOKEN) {
+    mostrarApp();
+    reconciliarEstadoConServidor();
+  }
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
+  setInterval(verificarCambioDia, 60000);
+}
+
+function verificarCambioDia() {
+  const fechaGuardada = localStorage.getItem('contador_fecha');
+  const hoyStr = fechaLocalISO();
+  if (fechaGuardada && fechaGuardada !== hoyStr) {
+    detenerContador();
+    minutosAcumuladosHoy = 0;
+    estadoActual = 'fuera';
+    localStorage.setItem('estado_actual', 'fuera');
+    localStorage.removeItem('minutos_acumulados_hoy');
+    actualizarUI();
+    const elToday = document.getElementById('todayHours');
+    if (elToday) elToday.textContent = '0h 0m';
+    cargarMisEstadisticas();
+  }
+}
+function abrirModalCambiarPin() {
+  document.getElementById('pinActual').value = '';
+  document.getElementById('pinNuevo').value = '';
+  document.getElementById('pinConfirmar').value = '';
+  document.getElementById('modalCambiarPin').classList.add('show');
+}
+
+function cerrarModalCambiarPin() {
+  document.getElementById('modalCambiarPin').classList.remove('show');
+}
+
+async function guardarNuevoPin() {
+  const btn = document.getElementById('btnCambiarPin');
+  const pinActual = document.getElementById('pinActual').value.trim();
+  const pinNuevo = document.getElementById('pinNuevo').value.trim();
+  const pinConfirmar = document.getElementById('pinConfirmar').value.trim();
+  
+  // Validaciones
+  if (!pinActual || !pinNuevo || !pinConfirmar) {
+    showToast('⚠️ Completa todos los campos', 'warn'); return;
+  }
+  if (!/^\d{4,6}$/.test(pinNuevo)) {
+    showToast('⚠️ El nuevo PIN debe tener 4-6 dígitos numéricos', 'warn'); return;
+  }
+  if (pinNuevo !== pinConfirmar) {
+    showToast('⚠️ Los PINs nuevos no coinciden', 'warn'); return;
+  }
+  if (pinNuevo === pinActual) {
+    showToast('⚠️ El nuevo PIN debe ser diferente al actual', 'warn'); return;
+  }
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
+  
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        session_token: SESSION_TOKEN,
+        accion: 'cambiar_pin',
+        pin_actual: pinActual,
+        pin_nuevo: pinNuevo
+      }),
+      redirect: 'follow'
+    });
+    const result = await res.json();
+    
+    if (result.status === 'ok') {
+      showToast('✅ PIN actualizado. Vuelve a iniciar sesión.', 'success');
+      cerrarModalCambiarPin();
+      setTimeout(() => {
+        localStorage.clear();
+        location.reload();
+      }, 2000);
+    } else {
+      showToast('❌ ' + (result.mensaje || 'No se pudo cambiar el PIN'), 'error');
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('❌ Error de conexión', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
+}
+function actualizarReloj() {
+  const a = new Date();
+  const elClock = document.getElementById('clockDisplay');
+  const elDate = document.getElementById('dateDisplay');
+  if (elClock) elClock.textContent = String(a.getHours()).padStart(2,'0') + ':' + String(a.getMinutes()).padStart(2,'0') + ':' + String(a.getSeconds()).padStart(2,'0');
+  if (elDate) elDate.textContent = a.toLocaleDateString('es-MX', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+
+// ================================================================
+//  CONTADOR
+// ================================================================
+function iniciarContador() {
+  horaEntradaActual = Date.now();
+  iniciarContadorDesde(horaEntradaActual);
+}
+
+function iniciarContadorDesde(ts) {
+  horaEntradaActual = ts;
+  localStorage.setItem('hora_entrada_actual', ts.toString());
+  localStorage.setItem('contador_fecha', fechaLocalISO());
+  if (contadorInterval) clearInterval(contadorInterval);
+  contadorInterval = setInterval(actualizarContadorTiempoReal, 1000);
+  actualizarContadorTiempoReal();
+}
+
+function reanudarContador() {
+  const guardada = localStorage.getItem('hora_entrada_actual');
+  const fechaGuardada = localStorage.getItem('contador_fecha');
+  if (guardada && fechaGuardada === fechaLocalISO()) {
+    iniciarContadorDesde(parseInt(guardada));
+  } else {
+    estadoActual = 'fuera';
+    localStorage.setItem('estado_actual', 'fuera');
+  }
+}
+
+function detenerContador() {
+  if (contadorInterval) { clearInterval(contadorInterval); contadorInterval = null; }
+  horaEntradaActual = null;
+  localStorage.removeItem('hora_entrada_actual');
+}
+
+function actualizarContadorTiempoReal() {
+  if (!horaEntradaActual) return;
+  const minutosTranscurridos = Math.floor((Date.now() - horaEntradaActual) / 60000);
+  const totalMinutos = minutosAcumuladosHoy + minutosTranscurridos;
+  const texto = `${Math.floor(totalMinutos / 60)}h ${totalMinutos % 60}m`;
+  const todayHoursEl = document.getElementById('todayHours');
+  if (todayHoursEl) {
+    todayHoursEl.textContent = texto;
+    todayHoursEl.classList.add('contando');
+  }
+  const hoyHorasEl = document.getElementById('hoyHoras');
+  if (hoyHorasEl) hoyHorasEl.textContent = `Horas hoy: ${texto}`;
+}
+
+// ================================================================
+//  LOGIN CON PIN
+// ================================================================
+async function iniciarSesion() {
+  const id = document.getElementById('inputEmpleadoId').value.trim().toUpperCase();
+  const pin = document.getElementById('inputPin').value.trim();
+
+  if (!id) { document.getElementById('inputEmpleadoId').focus(); return; }
+  if (!pin) { document.getElementById('inputPin').focus(); return; }
+
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+  const btnLogin = document.getElementById('btnLogin');
+  const errorMsg = document.getElementById('errorMsg');
+  const input = document.getElementById('inputEmpleadoId');
+  const inputPin = document.getElementById('inputPin');
+  const overlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+  const loadingDots = document.getElementById('loadingDots');
+
+  btnText.textContent = 'Validando...';
+  btnSpinner.style.display = 'inline-block';
+  btnLogin.disabled = true;
+  btnLogin.classList.add('cargando');
+  input.classList.add('cargando');
+  inputPin.classList.add('cargando');
+  input.disabled = true;
+  inputPin.disabled = true;
+  errorMsg.style.display = 'none';
+  loadingDots.classList.add('show');
+  overlay.classList.add('show');
+
+  const mensajes = ['Validando credenciales...', 'Verificando PIN...', 'Cargando tu información...', 'Casi listo...'];
+  let msgIdx = 0;
+  loadingText.textContent = mensajes[0];
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % mensajes.length;
+    loadingText.textContent = mensajes[msgIdx];
+  }, 2000);
+
+  const timeoutId = setTimeout(() => {
+    loadingText.textContent = 'El servidor tarda más de lo esperado...';
+  }, 20000);
+
+  try {
+    const url = `${API_URL}?accion=login_pin&id=${encodeURIComponent(id)}&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const texto = await response.text();
+    let data;
+    try { data = JSON.parse(texto); }
+    catch(e) {
+      console.error('Respuesta no-JSON:', texto);
+      errorMsg.textContent = 'Error del servidor. Contacta a RH.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    if (data.status === 'ok') {
+      loadingText.textContent = '¡Bienvenido ' + (data.empleado?.nombre?.split(' ')[0] || '') + '!';
+
+      empleado = data.empleado;
+      SESSION_TOKEN = data.session_token;
+      localStorage.setItem('empleado_actual', JSON.stringify(empleado));
+      localStorage.setItem('session_token', SESSION_TOKEN);
+
+      const fechaGuardada = localStorage.getItem('contador_fecha');
+      if (fechaGuardada !== fechaLocalISO()) {
+        estadoActual = 'fuera';
+        horaEntradaActual = null;
+        minutosAcumuladosHoy = 0;
+        localStorage.setItem('estado_actual', 'fuera');
+        localStorage.removeItem('hora_entrada_actual');
+        localStorage.removeItem('minutos_acumulados_hoy');
+      }
+
+      await new Promise(r => setTimeout(r, 700));
+      mostrarApp();
+      reconciliarEstadoConServidor();
+    } else {
+      errorMsg.textContent = data.mensaje || 'Datos incorrectos';
+      errorMsg.style.display = 'block';
+      inputPin.value = '';
+      input.style.animation = 'none';
+      inputPin.style.animation = 'none';
+      setTimeout(() => {
+        input.style.animation = 'shake 0.4s';
+        inputPin.style.animation = 'shake 0.4s';
+      }, 10);
+    }
+  } catch (error) {
+    console.error('Error login:', error);
+    errorMsg.textContent = 'Error de conexión. Verifica tu internet.';
+    errorMsg.style.display = 'block';
+  } finally {
+    clearInterval(msgInterval);
+    clearTimeout(timeoutId);
+
+    btnText.textContent = 'Ingresar';
+    btnSpinner.style.display = 'none';
+    btnLogin.disabled = false;
+    btnLogin.classList.remove('cargando');
+    input.classList.remove('cargando');
+    inputPin.classList.remove('cargando');
+    input.disabled = false;
+    inputPin.disabled = false;
+    loadingDots.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+}
+
+function mostrarApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('employeeNameDisplay').textContent = empleado.nombre;
+  document.getElementById('infoLine').textContent = `${empleado.sucursal_nombre} • ${empleado.turno_nombre} • ${empleado.departamento}`;
+  if (estadoActual === 'dentro') reanudarContador();
+  obtenerUbicacion();
+  actualizarUI();
+  cargarMisEstadisticas();
+  cargarMisSolicitudes();
+}
+
+function cerrarSesion() {
+  if (confirm('¿Cerrar sesión?')) {
+    detenerContador();
+    // Invalidar sesión en backend
+    if (SESSION_TOKEN) {
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'logout', session_token: SESSION_TOKEN }),
+        redirect: 'follow'
+      }).catch(() => {});
+    }
+    ['empleado_actual','estado_actual','hora_entrada_actual','minutos_acumulados_hoy','contador_fecha','session_token']
+      .forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
+// ================================================================
+//  RECONCILIAR ESTADO
+// ================================================================
+async function reconciliarEstadoConServidor() {
+  if (!SESSION_TOKEN) return;
+  try {
+    const hoy = fechaLocalISO();
+    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&session_token=${SESSION_TOKEN}`);
+    const data = await res.json();
+    if (data.status === 'ok' && data.registros) {
+      const regs = data.registros.sort((a,b) => (a.timestamp||'').localeCompare(b.timestamp||''));
+      const ultimo = regs[regs.length - 1];
+      if (ultimo) {
+        const deberiaEstarDentro = ultimo.tipo === 'entrada';
+        if (deberiaEstarDentro !== (estadoActual === 'dentro')) {
+          estadoActual = deberiaEstarDentro ? 'dentro' : 'fuera';
+          localStorage.setItem('estado_actual', estadoActual);
+          if (estadoActual === 'dentro') {
+            const ultimaEntrada = [...regs].reverse().find(r => r.tipo === 'entrada');
+            if (ultimaEntrada) {
+              const [h,m,s] = (ultimaEntrada.hora||'00:00:00').split(':').map(Number);
+              const d = new Date();
+              d.setHours(h, m, s||0, 0);
+              iniciarContadorDesde(d.getTime());
+            }
+          } else {
+            detenerContador();
+          }
+          actualizarUI();
+        }
+      }
+    }
+  } catch(e) { console.warn('No se pudo reconciliar estado:', e); }
+}
+
+// ================================================================
+//  UBICACIÓN
+// ================================================================
+function obtenerUbicacion() {
+  const el = document.getElementById('locationInfo');
+  if (!el) return;
+  if (!navigator.geolocation) {
+    el.innerHTML = '📍 Ubicación no disponible en este dispositivo';
+    el.className = 'location-info far';
+    ubicacionEstado = 'error';
+    return;
+  }
+  el.innerHTML = '📍 Obteniendo ubicación...';
+  el.className = 'location-info';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+      ubicacionEstado = 'ok';
+      el.innerHTML = `📍 Ubicación lista (±${Math.round(pos.coords.accuracy)}m) ✅`;
+      el.className = 'location-info ok';
+    },
+    (err) => {
+      ubicacionEstado = 'error';
+      let msg = '⚠️ Activa el GPS para registrar';
+      if (err.code === 1) msg = '🚫 Permiso de ubicación denegado. Actívalo en ajustes.';
+      else if (err.code === 2) msg = '📡 No se pudo obtener ubicación. Intenta al aire libre.';
+      else if (err.code === 3) msg = '⏱️ Tiempo de espera agotado. Reintenta.';
+      el.innerHTML = msg;
+      el.className = 'location-info far';
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+// ================================================================
+//  REGISTRAR
+// ================================================================
+async function registrar(tipo) {
+  if (!empleado || !empleado.id || !SESSION_TOKEN) {
+    showToast('❌ Sesión inválida. Vuelve a iniciar sesión.', 'error');
+    return;
+  }
+  if (!ubicacionActual) {
+    showToast('⚠️ Espera a que se obtenga la ubicación GPS', 'warn');
+    obtenerUbicacion();
+    return;
+  }
+
+  try {
+    const hoy = fechaLocalISO();
+    const checkRes = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${hoy}&hasta=${hoy}&session_token=${SESSION_TOKEN}`);
+    const checkData = await checkRes.json();
+    const regsHoy = (checkData.registros || []).sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    const ultimo = regsHoy[regsHoy.length - 1];
+    const estadoReal = ultimo && ultimo.tipo === 'entrada' ? 'dentro' : 'fuera';
+
+    if (estadoReal !== estadoActual) {
+      estadoActual = estadoReal;
+      localStorage.setItem('estado_actual', estadoActual);
+      actualizarUI();
+    }
+
+    if (tipo === 'entrada' && estadoReal === 'dentro') {
+      showToast('⚠️ Ya tienes una entrada registrada. Registra tu SALIDA primero.', 'warn');
+      return;
+    }
+    if (tipo === 'salida' && estadoReal === 'fuera') {
+      showToast('⚠️ No tienes una entrada activa para registrar salida.', 'warn');
+      return;
+    }
+  } catch (e) {
+    console.warn('No se pudo validar el estado previo:', e);
+  }
+
+  const btn = document.getElementById(tipo === 'entrada' ? 'btnEntrada' : 'btnSalida');
+  const txtOrig = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Registrando...';
+  }
+
+  const ahora = new Date();
+  const registro = {
+    session_token: SESSION_TOKEN,
+    accion: 'registrar',
+    empleado_id: String(empleado.id),
+    numero_empleado: String(empleado.id),
+    nombre: empleado.nombre || '',
+    departamento: empleado.departamento || '',
+    sucursal_id: empleado.sucursal_id || '',
+    sucursal_nombre: empleado.sucursal_nombre || '',
+    turno_id: empleado.turno_id || '',
+    turno_nombre: empleado.turno_nombre || '',
+    tipo: tipo,
+    fecha: fechaLocalISO(ahora),
+    hora: String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0') + ':' + String(ahora.getSeconds()).padStart(2,'0'),
+    timestamp: ahora.toISOString(),
+    latitud: ubicacionActual.lat,
+    longitud: ubicacionActual.lng,
+    ubicacion_texto: `${ubicacionActual.lat.toFixed(5)}, ${ubicacionActual.lng.toFixed(5)}`,
+    dispositivo: navigator.userAgent
+  };
+
+  console.log('📤 Enviando registro:', registro);
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(registro),
+      redirect: 'follow'
+    });
+
+    const textoRespuesta = await res.text();
+    console.log('📥 Respuesta:', textoRespuesta);
+
+    let result;
+    try { result = JSON.parse(textoRespuesta); }
+    catch (parseErr) {
+      console.error('❌ Respuesta no-JSON:', textoRespuesta.substring(0, 500));
+      showToast('❌ Error del servidor', 'error');
+      return;
+    }
+
+    if (result.status !== 'ok') {
+      showToast('❌ ' + (result.mensaje || 'No se pudo registrar'), 'error');
+      if (result.mensaje && (result.mensaje.includes('entrada registrada') || result.mensaje.includes('entrada activa'))) {
+        reconciliarEstadoConServidor();
+      }
+      return;
+    }
+
+    try {
+      const dentro = result.dentro_sucursal;
+      const fuera = dentro === false || dentro === 'NO' || (typeof dentro === 'string' && dentro.startsWith('NO'));
+      if (fuera) {
+        showToast('⚠️ Registro guardado, pero estás FUERA de la sucursal', 'warn');
+      }
+
+      if (tipo === 'entrada') {
+        estadoActual = 'dentro';
+        localStorage.setItem('estado_actual', estadoActual);
+        iniciarContador();
+        const elUltEntrada = document.getElementById('lastEntrada');
+        if (elUltEntrada) elUltEntrada.textContent = registro.hora;
+      } else {
+        if (horaEntradaActual) {
+          const minutosEstaSesion = Math.floor((Date.now() - horaEntradaActual) / 60000);
+          minutosAcumuladosHoy += minutosEstaSesion;
+          localStorage.setItem('minutos_acumulados_hoy', minutosAcumuladosHoy.toString());
+        }
+        detenerContador();
+        estadoActual = 'fuera';
+        localStorage.setItem('estado_actual', estadoActual);
+        const elUltSalida = document.getElementById('lastSalida');
+        if (elUltSalida) elUltSalida.textContent = registro.hora;
+        const elTodayHours = document.getElementById('todayHours');
+        if (elTodayHours) elTodayHours.classList.remove('contando');
+      }
+
+      showToast(tipo === 'entrada' ? '✅ Entrada registrada' : '🔴 Salida registrada', 'success');
+      actualizarUI();
+    } catch (uiError) {
+      console.error('⚠️ Error al actualizar UI:', uiError);
+    }
+
+    try { await cargarMisEstadisticas(); } catch (e) {}
+
+  } catch (error) {
+    console.error('❌ Error de red:', error);
+    showToast('❌ Error de conexión. Verifica tu internet.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = txtOrig;
+    }
+  }
+}
+
+// ================================================================
+//  ACTUALIZAR UI
+// ================================================================
+function actualizarUI() {
+  const badge = document.getElementById('statusBadge');
+  const statusText = document.getElementById('statusText');
+  const btnE = document.getElementById('btnEntrada');
+  const btnS = document.getElementById('btnSalida');
+
+  if (estadoActual === 'dentro') {
+    if (badge) badge.className = 'status-badge dentro';
+    if (statusText) statusText.textContent = 'Dentro del trabajo';
+    if (btnE) btnE.disabled = true;
+    if (btnS) btnS.disabled = false;
+  } else {
+    if (badge) badge.className = 'status-badge fuera';
+    if (statusText) statusText.textContent = 'Fuera del trabajo';
+    if (btnE) btnE.disabled = false;
+    if (btnS) btnS.disabled = true;
+    const elTodayHours = document.getElementById('todayHours');
+    if (elTodayHours) elTodayHours.classList.remove('contando');
+  }
+}
+
+// ================================================================
+//  CAMBIO DE PESTAÑA
+// ================================================================
+function cambiarTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const content = document.getElementById('tab-' + tab);
+  if (content) content.classList.add('active');
+  if (tab === 'estadisticas') cargarMisEstadisticas();
+  if (tab === 'solicitudes') cargarMisSolicitudes();
+}
+
+// ================================================================
+//  CÁLCULO DE HORAS
+// ================================================================
+function calcularHorasPorDia(registros) {
+  const porDia = {};
+  registros.forEach(r => {
+    if (!porDia[r.fecha]) porDia[r.fecha] = [];
+    porDia[r.fecha].push(r);
+  });
+
+  let totalMin = 0;
+  const detalleDias = {};
+
+  Object.keys(porDia).forEach(fecha => {
+    const regs = porDia[fecha].sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    let minutosDia = 0;
+    let entradaPendiente = null;
+
+    regs.forEach(r => {
+      if (r.tipo === 'entrada') {
+        entradaPendiente = r.hora;
+      } else if (r.tipo === 'salida' && entradaPendiente) {
+        const en = timeToMin(entradaPendiente);
+        const sa = timeToMin(r.hora);
+        let diff = sa - en;
+        if (diff < 0) diff += 1440;
+        if (diff > 0 && diff < 16 * 60) minutosDia += diff;
+        entradaPendiente = null;
+      }
+    });
+
+    detalleDias[fecha] = minutosDia;
+    totalMin += minutosDia;
+  });
+
+  return { totalMin, detalleDias };
+}
+
+// ================================================================
+//  ESTADÍSTICAS
+// ================================================================
+async function cargarMisEstadisticas() {
+  if (!empleado || !SESSION_TOKEN) return;
+  const hoy = new Date();
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const desde = fechaLocalISO(inicioMes);
+  const hasta = fechaLocalISO(hoy);
+  const hoyStr = fechaLocalISO(hoy);
+
+  const setTxt = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  try {
+    const res = await fetch(`${API_URL}?accion=consultar&empleado_id=${empleado.id}&desde=${desde}&hasta=${hasta}&session_token=${SESSION_TOKEN}`);
+    const data = await res.json();
+    misRegistros = data.registros || [];
+
+    const entradas = misRegistros.filter(r => r.tipo === 'entrada');
+    const retardos = entradas.filter(r => {
+      const v = r.fuera_horario;
+      return v === true || v === 'SI' || v === 'si' || v === 1;
+    });
+    const fueraUbicacion = misRegistros.filter(r => {
+      const v = r.dentro_sucursal;
+      return v === false || v === 'NO' || (typeof v === 'string' && v.toUpperCase().startsWith('NO'));
+    });
+    const diasTrabajados = new Set(entradas.map(r => r.fecha)).size;
+
+    const { totalMin, detalleDias } = calcularHorasPorDia(misRegistros);
+    const totalHoras = Math.floor(totalMin / 60);
+    const minsRestantes = totalMin % 60;
+    const minutosHoy = detalleDias[hoyStr] || 0;
+
+    let minutosHoyConteo = minutosHoy;
+    const regsHoy = misRegistros.filter(r => r.fecha === hoyStr).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const ultimaEntradaSinSalida = (() => {
+      let pendiente = null;
+      regsHoy.forEach(r => { if (r.tipo === 'entrada') pendiente = r.hora; else if (r.tipo === 'salida') pendiente = null; });
+      return pendiente;
+    })();
+    if (estadoActual === 'dentro' && ultimaEntradaSinSalida) {
+      const en = timeToMin(ultimaEntradaSinSalida);
+      const ahoraMin = hoy.getHours() * 60 + hoy.getMinutes();
+      let diff = ahoraMin - en;
+      if (diff < 0) diff += 1440;
+      if (diff > 0 && diff < 16*60) minutosHoyConteo += diff;
+    }
+
+    let permisosAprobados = [];
+    let diasVacaciones = 0;
+    try {
+      const excRes = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&session_token=${SESSION_TOKEN}`);
+      const excData = await excRes.json();
+      const excepciones = excData.excepciones || [];
+      permisosAprobados = excepciones.filter(e => e.estado === 'APROBADO' && ['PERMISO','RETARDO','FALTA_JUST'].includes(e.tipo));
+      const vacaciones = excepciones.filter(e => e.tipo === 'VACACIONES' && e.estado === 'APROBADO');
+      vacaciones.forEach(v => {
+        if (v.fecha_inicio && v.fecha_fin) {
+          const ini = new Date(v.fecha_inicio + 'T00:00:00');
+          const fin = new Date(v.fecha_fin + 'T00:00:00');
+          diasVacaciones += Math.round((fin - ini) / 86400000) + 1;
+        } else if (v.fecha_inicio) {
+          diasVacaciones += 1;
+        }
+      });
+    } catch(e) { console.warn('No se pudieron cargar excepciones:', e); }
+
+    setTxt('statHoras', `${totalHoras}h ${minsRestantes}m`);
+    setTxt('statDias', diasTrabajados);
+    setTxt('statRetardos', retardos.length);
+    setTxt('statFuera', fueraUbicacion.length);
+    setTxt('statPermisos', permisosAprobados.length);
+    setTxt('statVacaciones', diasVacaciones);
+
+    if (estadoActual !== 'dentro') {
+      setTxt('todayHours', `${Math.floor(minutosHoyConteo/60)}h ${minutosHoyConteo%60}m`);
+    }
+
+    const ultimaEntrada = regsHoy.filter(r => r.tipo === 'entrada').pop();
+    const ultimaSalida = regsHoy.filter(r => r.tipo === 'salida').pop();
+    setTxt('hoyEntrada', `Entrada: ${ultimaEntrada ? ultimaEntrada.hora : 'Sin registrar'}`);
+    setTxt('hoySalida', `Salida: ${ultimaSalida ? ultimaSalida.hora : 'Sin registrar'}`);
+    setTxt('hoyHoras', `Horas hoy: ${Math.floor(minutosHoyConteo/60)}h ${minutosHoyConteo%60}m`);
+
+    let diasLaborables = 0;
+    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+    const diaLimite = Math.min(hoy.getDate(), ultimoDia);
+    for (let d = 1; d <= diaLimite; d++) {
+      const f = new Date(hoy.getFullYear(), hoy.getMonth(), d);
+      const dow = f.getDay();
+      if (dow !== 0 && dow !== 6) diasLaborables++;
+    }
+    const cumplimiento = diasLaborables > 0 ? Math.round((diasTrabajados / diasLaborables) * 100) : 0;
+    setTxt('statCumplimiento', `${cumplimiento}% - ${diasTrabajados} de ${diasLaborables} días`);
+
+    const bar = document.getElementById('progressBar');
+    if (bar) {
+      bar.style.width = `${Math.min(cumplimiento, 100)}%`;
+      if (cumplimiento < 50) bar.style.background = 'linear-gradient(90deg, #d32f2f, #ef5350)';
+      else if (cumplimiento < 80) bar.style.background = 'linear-gradient(90deg, #f57c00, #ffa726)';
+      else bar.style.background = 'linear-gradient(90deg, #388e3c, #66bb6a)';
+    }
+  } catch (error) {
+    console.error('❌ Error al cargar estadísticas:', error);
+  }
+}
+
+// ================================================================
+//  SOLICITUDES
+// ================================================================
+function toggleHorario() {
+  const tipo = document.getElementById('inputTipoSolicitud').value;
+  document.getElementById('horarioPermiso').style.display = (tipo === 'PERMISO') ? 'block' : 'none';
+}
+
+function abrirNuevaSolicitud() {
+  document.getElementById('inputFechaSolicitud').value = fechaLocalISO();
+  document.getElementById('inputFechaSolicitud').min = fechaLocalISO();
+  document.getElementById('inputMotivo').value = '';
+  document.getElementById('inputHoraIni').value = '';
+  document.getElementById('inputHoraFin').value = '';
+  document.getElementById('modalSolicitud').classList.add('show');
+}
+
+function cerrarModalSolicitud() {
+  document.getElementById('modalSolicitud').classList.remove('show');
+}
+
+async function enviarSolicitud() {
+  const btn = document.getElementById('btnEnviarSolicitud');
+  const tipo = document.getElementById('inputTipoSolicitud').value;
+  const fecha = document.getElementById('inputFechaSolicitud').value;
+  const motivo = document.getElementById('inputMotivo').value.trim();
+  const horaIni = document.getElementById('inputHoraIni').value;
+  const horaFin = document.getElementById('inputHoraFin').value;
+
+  if (!fecha || !motivo) { showToast('⚠️ Completa fecha y motivo', 'warn'); return; }
+  if (fecha < fechaLocalISO()) { showToast('⚠️ No puedes solicitar fechas pasadas', 'warn'); return; }
+  if (tipo === 'PERMISO' && (!horaIni || !horaFin)) { showToast('⚠️ Indica el horario del permiso', 'warn'); return; }
+  if (tipo === 'PERMISO' && horaIni >= horaFin) { showToast('⚠️ La hora fin debe ser mayor a la de inicio', 'warn'); return; }
+  if (motivo.length < 10) { showToast('⚠️ El motivo debe tener al menos 10 caracteres', 'warn'); return; }
+
+  const data = {
+    session_token: SESSION_TOKEN,
+    accion: 'solicitar_justificacion',
+    tipo,
+    empleado_id: String(empleado.id),
+    numero_empleado: String(empleado.id),
+    empleado_nombre: empleado.nombre,
+    sucursal_id: empleado.sucursal_id,
+    turno_id: empleado.turno_id,
+    fecha, fecha_inicio: fecha, fecha_fin: fecha,
+    hora_inicio: tipo === 'PERMISO' ? horaIni : '',
+    hora_fin: tipo === 'PERMISO' ? horaFin : '',
+    motivo
+  };
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data),
+      redirect: 'follow'
+    });
+    const texto = await response.text();
+    let result;
+    try { result = JSON.parse(texto); }
+    catch(e) { showToast('❌ Respuesta inválida del servidor', 'error'); return; }
+
+    if (result.status === 'ok') {
+      cerrarModalSolicitud();
+      showToast('✅ Solicitud enviada correctamente', 'success');
+      setTimeout(() => { cargarMisSolicitudes(); cargarMisEstadisticas(); }, 1200);
+    } else {
+      showToast('❌ ' + (result.mensaje || 'No se pudo enviar'), 'error');
+    }
+  } catch (error) {
+    console.error(error);
+    showToast('❌ Error de conexión al enviar.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar';
+  }
+}
+
+async function cargarMisSolicitudes() {
+  if (!empleado || !SESSION_TOKEN) return;
+  try {
+    const res = await fetch(`${API_URL}?accion=excepciones&empleado_id=${empleado.id}&session_token=${SESSION_TOKEN}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      misSolicitudes = data.excepciones || [];
+      renderMisSolicitudes();
+    }
+  } catch (error) { console.error('Error al cargar solicitudes:', error); }
+}
+
+function renderMisSolicitudes() {
+  const container = document.getElementById('listaSolicitudes');
+  if (!container) return;
+  if (!misSolicitudes || misSolicitudes.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>Sin solicitudes</p><p style="font-size:0.8rem; margin-top:5px;">Presiona "Nueva solicitud" para crear una</p></div>';
+    return;
+  }
+  const tipoTexto = { 'RETARDO':'Retardo','FALTA_JUST':'Falta justificada','PERMISO':'Permiso','VACACIONES':'Vacaciones','INCAPACIDAD':'Incapacidad','EVENTO':'Evento' };
+  container.innerHTML = misSolicitudes.map(s => {
+    const estadoColor = s.estado === 'APROBADO' ? 'estado-aprobado' : s.estado === 'RECHAZADO' ? 'estado-rechazado' : 'estado-pendiente';
+    const estadoIcon = s.estado === 'APROBADO' ? '✅' : s.estado === 'RECHAZADO' ? '❌' : '⏳';
+    const bgColor = s.estado === 'APROBADO' ? '#e8f5e9' : s.estado === 'RECHAZADO' ? '#fce4ec' : '#fff3e0';
+    return `
+      <div class="record-card">
+        <div class="record-thumb" style="background:${bgColor}; font-size:1.5rem;">${estadoIcon}</div>
+        <div class="record-info">
+          <div class="record-type">${tipoTexto[s.tipo] || s.tipo}</div>
+          <div class="record-meta">📅 ${s.fecha_inicio}${s.fecha_fin && s.fecha_fin !== s.fecha_inicio ? ' → ' + s.fecha_fin : ''}${s.hora_inicio ? ' | 🕐 ' + s.hora_inicio + ' - ' + s.hora_fin : ''}</div>
+          <div class="record-motivo">"${s.motivo}"</div>
+          <div class="record-estado ${estadoColor}">${s.estado}${s.observaciones ? ' • ' + s.observaciones : ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ================================================================
+//  INIT
+// ================================================================
+init();
+</script>
+</body>
+</html>

@@ -7,7 +7,6 @@
 <title>Radar Team - Control de Asistencia con GPS</title>
 <meta name="description" content="Radar Team - Sistema de control de asistencia laboral con GPS, marcas desde el celular, reportes y auditoría. Prueba la demo.">
 <style>
-  /* ============ BASE ============ */
   :root {
     --primary: #1a237e;
     --primary-light: #3949ab;
@@ -143,7 +142,6 @@
   .hero-stat .num { font-size: 28px; font-weight: 800; color: var(--accent); }
   .hero-stat .lbl { font-size: 12px; color: rgba(255,255,255,.7); text-transform: uppercase; letter-spacing: .5px; }
 
-  /* Hero Visual - Mockup */
   .hero-visual { position: relative; }
   .hero-mockup {
     background: rgba(255,255,255,.08);
@@ -314,7 +312,6 @@
     font-size: 15px; color: var(--text-light); font-weight: 500;
   }
 
-  /* ============ PHONE MOCKUPS ============ */
   .phones-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 40px; justify-items: center; margin-top: 20px;
@@ -500,7 +497,6 @@
     .footer-inner { grid-template-columns: 1fr; }
   }
 
-  /* ============ SCROLL REVEAL ============ */
   .reveal {
     opacity: 0; transform: translateY(30px);
     transition: all .7s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -678,7 +674,6 @@
       <button class="tab-btn" onclick="showScreen('app-empleado', this)">📱 App Empleado</button>
     </div>
 
-    <!-- DASHBOARD -->
     <div class="screenshot-panel active" id="panel-dashboard">
       <div class="screenshot-wrapper">
         <img src="https://i.imgur.com/rlJ183t.png" alt="Dashboard en vivo del panel administrativo">
@@ -686,7 +681,6 @@
       <p class="screenshot-caption">📊 Dashboard en vivo con KPIs, empleados en planta e incidencias</p>
     </div>
 
-    <!-- SEMANA -->
     <div class="screenshot-panel" id="panel-semana">
       <div class="screenshot-wrapper">
         <img src="https://i.imgur.com/MmZpLNv.png" alt="Vista semanal de asistencia">
@@ -694,7 +688,6 @@
       <p class="screenshot-caption">📅 Vista semanal con detalle diario de cada empleado</p>
     </div>
 
-    <!-- EMPLEADOS -->
     <div class="screenshot-panel" id="panel-empleados">
       <div class="screenshot-wrapper">
         <img src="https://i.imgur.com/YVUMnWh.png" alt="Catálogo de empleados">
@@ -702,7 +695,6 @@
       <p class="screenshot-caption">👥 Catálogo de empleados con filtros por departamento, sucursal y turno</p>
     </div>
 
-    <!-- ANALISIS -->
     <div class="screenshot-panel" id="panel-analisis">
       <div class="screenshot-wrapper">
         <img src="https://i.imgur.com/rwqvq7r.png" alt="Análisis y tendencias">
@@ -710,7 +702,6 @@
       <p class="screenshot-caption">📈 Gráficas de tendencias, comparativas por sucursal y métricas por departamento</p>
     </div>
 
-    <!-- REPORTES -->
     <div class="screenshot-panel" id="panel-reportes">
       <div class="screenshot-wrapper">
         <img src="https://i.imgur.com/Ue4fgLm.png" alt="Generación de reportes">
@@ -718,7 +709,6 @@
       <p class="screenshot-caption">📥 Reportes en Excel generales y por empleado</p>
     </div>
 
-    <!-- APP EMPLEADO -->
     <div class="screenshot-panel" id="panel-app-empleado">
       <div class="phones-grid">
         <div class="phone-frame">
@@ -840,16 +830,16 @@
       <p>Ingresa con las credenciales de prueba y explora el panel administrativo completo con datos de ejemplo.</p>
       
       <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-        <a href="https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec?accion=admin" 
-           target="_blank"
+        <a href="javascript:void(0)" 
+           onclick="window.open('https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec?accion=admin', '_blank', 'noopener,noreferrer');"
            class="btn btn-primary"
-           style="font-size: 16px; padding: 16px 32px;">
+           style="font-size: 16px; padding: 16px 32px; cursor: pointer;">
           🖥️ Abrir Panel Admin
         </a>
-        <a href="https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec" 
-           target="_blank"
+        <a href="javascript:void(0)" 
+           onclick="window.open('https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec', '_blank', 'noopener,noreferrer');"
            class="btn btn-ghost"
-           style="font-size: 16px; padding: 16px 32px;">
+           style="font-size: 16px; padding: 16px 32px; cursor: pointer;">
           📱 Abrir App Empleado
         </a>
       </div>
@@ -993,7 +983,7 @@
     <div>
       <h4>Recursos</h4>
       <ul>
-        <li><a href="https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec?accion=ayuda" target="_blank">Manual de usuario</a></li>
+        <li><a href="javascript:void(0)" onclick="window.open('https://script.google.com/macros/s/AKfycbxHelojH0xOkk8QrG6v8VrpYzlP2YeNYXIqN2U-NwDsPB2YY-72pLYoLhW3LKvI5S76/exec?accion=ayuda', '_blank', 'noopener,noreferrer');">Manual de usuario</a></li>
         <li><a href="#faq">Preguntas frecuentes</a></li>
         <li><a href="#soporte">Soporte</a></li>
       </ul>
